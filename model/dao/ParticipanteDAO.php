@@ -47,9 +47,11 @@ class ParticipanteDAO {
     /**
      * Crea un nuevo registro de participante y descuenta un cupo, todo dentro de una transacción.
      */
-    public function crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $id_tipo_entrada, $numero_transaccion, $ruta_comprobante) {
+    public function crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $id_tipo_entrada, $numero_transaccion, $banco, $ruta_comprobante) {
         
-        $tipoEntradaDAO = new TipoEntradaDAO(); // Necesitamos una instancia para llamar a la otra clase
+        // La conexión ya está disponible en $this->conn, no necesitamos una nueva instancia de DAO aquí.
+        // El decremento de cupo se manejará directamente.
+        $tipoEntradaDAO = new TipoEntradaDAO();
 
         try {
             // Iniciamos la transacción
@@ -64,8 +66,8 @@ class ParticipanteDAO {
             }
 
             // 2. Si el decremento fue exitoso, insertamos el nuevo participante
-            $query = "INSERT INTO participantes (nombres, apellidos, cedula, email, telefono, id_tipo_entrada, numero_transaccion, ruta_comprobante) 
-                      VALUES (:nombres, :apellidos, :cedula, :email, :telefono, :id_tipo_entrada, :numero_transaccion, :ruta_comprobante)";
+            $query = "INSERT INTO participantes (nombres, apellidos, cedula, email, telefono, id_tipo_entrada, numero_transaccion, banco, ruta_comprobante) 
+                      VALUES (:nombres, :apellidos, :cedula, :email, :telefono, :id_tipo_entrada, :numero_transaccion, :banco, :ruta_comprobante)";
             
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':nombres', $nombres);
@@ -75,6 +77,7 @@ class ParticipanteDAO {
             $stmt->bindParam(':telefono', $telefono);
             $stmt->bindParam(':id_tipo_entrada', $id_tipo_entrada, PDO::PARAM_INT);
             $stmt->bindParam(':numero_transaccion', $numero_transaccion);
+            $stmt->bindParam(':banco', $banco); // <-- ¡PARÁMETRO AÑADIDO!
             $stmt->bindParam(':ruta_comprobante', $ruta_comprobante);
             $stmt->execute();
 

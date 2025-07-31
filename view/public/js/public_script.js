@@ -63,8 +63,10 @@ $(document).ready(function() {
             } else {
                 $('#cedula-error').text('');
             }
-        } else {
+        } else if (valor.length > 0) {
             $('#cedula-error').text('La cédula debe tener 10 dígitos.');
+        } else {
+             $('#cedula-error').text('');
         }
     });
 
@@ -74,12 +76,41 @@ $(document).ready(function() {
         $(this).val(valor);
         if (valor.length > 0 && !valor.startsWith('09')) {
             $('#telefono-error').text('El teléfono debe empezar con 09.');
-        } else if (valor.length !== 10) {
+        } else if (valor.length > 0 && valor.length !== 10) {
             $('#telefono-error').text('El teléfono debe tener 10 dígitos.');
         } else {
             $('#telefono-error').text('');
         }
     });
+
+
+    // --- LÓGICA PARA MOSTRAR/OCULTAR CAMPOS DE PAGO ---
+    $('#tipo_entrada_select').on('change', function() {
+        const precio = parseFloat($(this).find('option:selected').data('precio'));
+
+        // Seleccionamos los 3 campos de pago
+        const campoBanco = $('#campo-banco');
+        const campoTransaccion = $('#campo-transaccion');
+        const campoComprobante = $('#campo-comprobante');
+
+        if (precio > 0) {
+            // Si hay costo, mostramos los campos y los hacemos obligatorios
+            campoBanco.show();
+            campoBanco.find('select').prop('required', true);
+            campoTransaccion.show();
+            campoTransaccion.find('input').prop('required', true);
+            campoComprobante.show();
+            campoComprobante.find('input').prop('required', true);
+        } else {
+            // Si es gratuito, los ocultamos y quitamos el 'required'
+            campoBanco.hide();
+            campoBanco.find('select').prop('required', false);
+            campoTransaccion.hide();
+            campoTransaccion.find('input').prop('required', false);
+            campoComprobante.hide();
+            campoComprobante.find('input').prop('required', false);
+        }
+    }).trigger('change'); // Hacemos que se ejecute al cargar la página para establecer el estado inicial
 
 
     // --- LÓGICA DE ENVÍO AJAX DEL FORMULARIO ---
@@ -103,6 +134,8 @@ $(document).ready(function() {
                 if (response.status === 'success') {
                     alertContainer.html(`<div class="alert alert-success">${response.message}</div>`);
                     form[0].reset();
+                    // Ocultamos de nuevo los campos de pago tras un registro exitoso
+                    $('#campo-banco, #campo-transaccion, #campo-comprobante').hide();
                 } else {
                     // Si hay errores, los mostramos en una lista
                     let errorHtml = '<div class="alert alert-danger"><ul>';
@@ -120,30 +153,5 @@ $(document).ready(function() {
                 submitButton.prop('disabled', false).html(originalButtonText);
             }
         });
-    });
-
-
-    // --- LÓGICA PARA MOSTRAR/OCULTAR CAMPOS DE PAGO ---
-    $('#tipo_entrada_select').on('change', function() {
-        // Obtenemos el precio del 'data-precio' de la opción seleccionada
-        const precio = $(this).find('option:selected').data('precio');
-
-        // Seleccionamos los campos de pago
-        const campoTransaccion = $('#campo-transaccion');
-        const campoComprobante = $('#campo-comprobante');
-
-        if (precio > 0) {
-            // Si el precio es mayor a 0, mostramos los campos y los hacemos obligatorios
-            campoTransaccion.show();
-            campoTransaccion.find('input').prop('required', true);
-            campoComprobante.show();
-            campoComprobante.find('input').prop('required', true);
-        } else {
-            // Si es 0 (gratuito), los ocultamos y quitamos el 'required'
-            campoTransaccion.hide();
-            campoTransaccion.find('input').prop('required', false);
-            campoComprobante.hide();
-            campoComprobante.find('input').prop('required', false);
-        }
     });
 });

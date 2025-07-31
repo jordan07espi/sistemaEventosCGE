@@ -129,10 +129,20 @@ include 'partials/header.php';
                         </select>
                     </div>
 
+                    <div id="campo-banco" class="mb-3" style="display:none;">
+                        <label class="form-label">Banco de la Transacción</label>
+                        <select name="banco" class="form-select">
+                            <option value="Banco Pichincha">Banco Pichincha</option>
+                            <option value="Banco del Pacifico">Banco del Pacífico</option>
+                            <option value="Otro">Otro Banco</option>
+                        </select>
+                    </div>
+
                     <div id="campo-transaccion" class="mb-3" style="display:none;">
                         <label class="form-label">Número de Transacción/Depósito</label>
                         <input type="text" name="numero_transaccion" class="form-control">
                     </div>
+
                     <div id="campo-comprobante" class="mb-3" style="display:none;">
                         <label class="form-label">Subir Comprobante (Imagen o PDF)</label>
                         <input type="file" name="comprobante" class="form-control" accept="image/*,.pdf">

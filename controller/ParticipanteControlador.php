@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $telefono = trim($_POST['telefono'] ?? '');
     $id_tipo_entrada = $_POST['id_tipo_entrada'] ?? null;
     $numero_transaccion = trim($_POST['numero_transaccion'] ?? '');
+    $banco = $_POST['banco'] ?? 'Otro'; // Recogemos el nuevo campo del banco
 
     // --- LÓGICA PARA EVENTOS GRATUITOS ---
     $esGratuito = false;
@@ -89,27 +90,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- Procesamiento ---
     if (empty($errors)) {
         try {
-            $ruta_para_bd = 'N/A'; // Valor por defecto para eventos gratuitos
+            $ruta_para_bd = 'N/A'; // Valor por defecto
             
             if (!$esGratuito) {
                 // Lógica de subida de archivo para eventos de pago
-                $directorio_subida = __DIR__ . '/../uploads/comprobantes/';
+                $nombre_carpeta_banco = preg_replace("/[^a-zA-Z0-9]+/", "", $banco);
+                $directorio_subida = __DIR__ . '/../uploads/comprobantes/' . $nombre_carpeta_banco . '/';
                 if (!is_dir($directorio_subida)) mkdir($directorio_subida, 0777, true);
                 
                 $nombre_archivo = uniqid() . '-' . basename($_FILES['comprobante']['name']);
                 $ruta_completa = $directorio_subida . $nombre_archivo;
                 
                 if (move_uploaded_file($_FILES['comprobante']['tmp_name'], $ruta_completa)) {
-                    $ruta_para_bd = 'uploads/comprobantes/' . $nombre_archivo;
+                    $ruta_para_bd = 'uploads/comprobantes/' . $nombre_carpeta_banco . '/' . $nombre_archivo;
                 } else {
                     throw new Exception("Hubo un error al guardar el archivo del comprobante.");
                 }
             } else {
-                // Si es gratuito, el número de transacción es 'GRATUITO'
+                // Si es gratuito, asignamos valores por defecto
                 $numero_transaccion = 'GRATUITO-' . uniqid();
+                $banco = 'N/A';
             }
 
-            $participanteDAO->crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $id_tipo_entrada, $numero_transaccion, $ruta_para_bd);
+            // Llamamos al DAO con el nuevo parámetro de banco
+            $participanteDAO->crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $id_tipo_entrada, $numero_transaccion, $banco, $ruta_para_bd);
             $response = ['status' => 'success', 'message' => '¡Registro guardado exitosamente! Gracias por inscribirte.'];
 
         } catch (Exception $e) {
