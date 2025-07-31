@@ -1,11 +1,14 @@
 <?php
 require_once __DIR__ . '/../model/dao/ParticipanteDAO.php';
+require_once __DIR__ . '/../model/dao/TipoEntradaDAO.php';
 
 header('Content-Type: application/json');
 $response = ['status' => 'error', 'errors' => ['Petición no válida.']];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = [];
+    $participanteDAO = new ParticipanteDAO();
+    $tipoEntradaDAO = new TipoEntradaDAO();
     
     // --- Recolección de Datos ---
     $id_evento = $_POST['id_evento'] ?? null;
@@ -16,6 +19,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $telefono = trim($_POST['telefono'] ?? '');
     $id_tipo_entrada = $_POST['id_tipo_entrada'] ?? null;
     $numero_transaccion = trim($_POST['numero_transaccion'] ?? '');
+
+    // --- LÓGICA PARA EVENTOS GRATUITOS ---
+    $esGratuito = false;
+    if ($id_tipo_entrada) {
+        $tipoEntrada = $tipoEntradaDAO->getTipoEntradaPorId($id_tipo_entrada);
+        if ($tipoEntrada && (float)$tipoEntrada['precio'] === 0.00) {
+            $esGratuito = true;
+        }
+    }
 
     // --- Función de Validación de Cédula Ecuatoriana ---
     function validarCedula($cedula) {
@@ -54,37 +66,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!preg_match('/^09\d{8}$/', $telefono)) $errors[] = 'El teléfono debe tener 10 dígitos y empezar con 09.';
 
     if (empty($id_tipo_entrada)) $errors[] = 'Debe seleccionar un tipo de entrada.';
-    if (empty($numero_transaccion)) $errors[] = 'El número de transacción es obligatorio.';
+
+    // SOLO validamos los campos de pago SI NO es gratuito
+    if (!$esGratuito) {
+        if (empty($numero_transaccion)) $errors[] = 'El número de transacción es obligatorio.';
+        if (!isset($_FILES['comprobante']) || $_FILES['comprobante']['error'] != 0) {
+            $errors[] = 'Es obligatorio subir el archivo del comprobante.';
+        }
+    }
 
     // Si no hay errores de formato, procedemos a validar contra la BD
     if (empty($errors)) {
-        $participanteDAO = new ParticipanteDAO();
         if ($participanteDAO->cedulaYaRegistradaEnEvento($cedula, $id_evento)) {
             $errors[] = "La cédula '$cedula' ya ha sido registrada en este evento.";
         }
-        if ($participanteDAO->transaccionYaRegistrada($numero_transaccion)) {
+        // Solo validamos transacción si no es gratuito y se proveyó un número
+        if (!$esGratuito && !empty($numero_transaccion) && $participanteDAO->transaccionYaRegistrada($numero_transaccion)) {
             $errors[] = "El número de transacción '$numero_transaccion' ya ha sido utilizado.";
         }
     }
 
     // --- Procesamiento ---
     if (empty($errors)) {
-        if (isset($_FILES['comprobante']) && $_FILES['comprobante']['error'] == 0) {
-            $directorio_subida = __DIR__ . '/../uploads/comprobantes/';
-            if (!is_dir($directorio_subida)) mkdir($directorio_subida, 0777, true);
+        try {
+            $ruta_para_bd = 'N/A'; // Valor por defecto para eventos gratuitos
             
-            $nombre_archivo = uniqid() . '-' . basename($_FILES['comprobante']['name']);
-            $ruta_completa = $directorio_subida . $nombre_archivo;
-            
-            if (move_uploaded_file($_FILES['comprobante']['tmp_name'], $ruta_completa)) {
-                $ruta_para_bd = 'uploads/comprobantes/' . $nombre_archivo;
-                $participanteDAO->crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $id_tipo_entrada, $numero_transaccion, $ruta_para_bd);
-                $response = ['status' => 'success', 'message' => '¡Registro guardado exitosamente! Gracias por inscribirte.'];
+            if (!$esGratuito) {
+                // Lógica de subida de archivo para eventos de pago
+                $directorio_subida = __DIR__ . '/../uploads/comprobantes/';
+                if (!is_dir($directorio_subida)) mkdir($directorio_subida, 0777, true);
+                
+                $nombre_archivo = uniqid() . '-' . basename($_FILES['comprobante']['name']);
+                $ruta_completa = $directorio_subida . $nombre_archivo;
+                
+                if (move_uploaded_file($_FILES['comprobante']['tmp_name'], $ruta_completa)) {
+                    $ruta_para_bd = 'uploads/comprobantes/' . $nombre_archivo;
+                } else {
+                    throw new Exception("Hubo un error al guardar el archivo del comprobante.");
+                }
             } else {
-                $response = ['status' => 'error', 'errors' => ['Hubo un error al guardar el archivo del comprobante.']];
+                // Si es gratuito, el número de transacción es 'GRATUITO'
+                $numero_transaccion = 'GRATUITO-' . uniqid();
             }
-        } else {
-            $response = ['status' => 'error', 'errors' => ['Es obligatorio subir el archivo del comprobante.']];
+
+            $participanteDAO->crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $id_tipo_entrada, $numero_transaccion, $ruta_para_bd);
+            $response = ['status' => 'success', 'message' => '¡Registro guardado exitosamente! Gracias por inscribirte.'];
+
+        } catch (Exception $e) {
+            $response = ['status' => 'error', 'errors' => [$e->getMessage()]];
         }
     } else {
         $response = ['status' => 'error', 'errors' => $errors];

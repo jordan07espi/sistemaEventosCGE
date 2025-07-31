@@ -56,9 +56,9 @@ include 'partials/header.php';
                 <?php else: ?>
                     <?php foreach($calendarios as $cal): ?>
                         <div class="mb-2">
-                            <strong>Fecha:</strong> <?php echo date("d/m/Y", strtotime($cal['fecha'])); ?> <br>
-                            <strong>Hora:</strong> <?php echo date("h:i A", strtotime($cal['hora'])); ?> <br>
-                            <strong>Lugar:</strong> <?php echo htmlspecialchars($cal['nombre_establecimiento']); ?>
+                            <strong>🗓️ Fecha:</strong> <?php echo date("d/m/Y", strtotime($cal['fecha'])); ?> <br>
+                            <strong>🕒 Hora:</strong> <?php echo date("h:i A", strtotime($cal['hora'])); ?> <br>
+                            <strong>📍 Lugar:</strong> <?php echo htmlspecialchars($cal['nombre_establecimiento']); ?>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -109,7 +109,7 @@ include 'partials/header.php';
                     
                     <div class="mb-3">
                         <label class="form-label">Seleccione el Tipo de Entrada</label>
-                        <select name="id_tipo_entrada" class="form-select" required>
+                        <select name="id_tipo_entrada" id="tipo_entrada_select" class="form-select" required>
                             <option value="" disabled selected>-- Elige una opción --</option>
                             <?php foreach($calendarios as $cal): ?>
                                 <optgroup label="Fecha: <?php echo date("d/m/Y", strtotime($cal['fecha'])); ?>">
@@ -120,7 +120,7 @@ include 'partials/header.php';
                                             $texto_cupos = ($cupos_disponibles > 0) ? "- Quedan $cupos_disponibles cupos" : "- AGOTADO";
                                             $esta_deshabilitado = ($cupos_disponibles <= 0) ? 'disabled' : '';
                                         ?>
-                                        <option value="<?php echo $tipo['id']; ?>" <?php echo $esta_deshabilitado; ?>>
+                                        <option value="<?php echo $tipo['id']; ?>" data-precio="<?php echo $tipo['precio']; ?>" <?php echo $esta_deshabilitado; ?>>
                                             <?php echo htmlspecialchars($tipo['nombre']); ?> ($<?php echo number_format($tipo['precio'], 2); ?>) <?php echo $texto_cupos; ?>
                                         </option>
                                     <?php endforeach; ?>
@@ -128,8 +128,15 @@ include 'partials/header.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="mb-3"><label class="form-label">Número de Transacción/Depósito</label><input type="text" name="numero_transaccion" class="form-control" required></div>
-                    <div class="mb-3"><label class="form-label">Subir Comprobante (Imagen o PDF)</label><input type="file" name="comprobante" class="form-control" accept="image/*,.pdf" required></div>
+
+                    <div id="campo-transaccion" class="mb-3" style="display:none;">
+                        <label class="form-label">Número de Transacción/Depósito</label>
+                        <input type="text" name="numero_transaccion" class="form-control">
+                    </div>
+                    <div id="campo-comprobante" class="mb-3" style="display:none;">
+                        <label class="form-label">Subir Comprobante (Imagen o PDF)</label>
+                        <input type="file" name="comprobante" class="form-control" accept="image/*,.pdf">
+                    </div>
 
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <a href="../../index.php" class="btn btn-secondary">Volver a la Lista</a>

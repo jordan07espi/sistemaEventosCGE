@@ -19,6 +19,13 @@ class TipoEntradaDAO {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
+    public function getTipoEntradaPorId($id) {
+        $query = "SELECT * FROM tipos_entrada WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     
     public function crearTipoEntrada($id_calendario, $nombre, $precio, $cantidad, $detalle) {
         $query = "INSERT INTO tipos_entrada (id_calendario, nombre, precio, cantidad_total, cantidad_disponible, detalle) 
@@ -48,5 +55,7 @@ class TipoEntradaDAO {
         // Devolvemos el número de filas afectadas. Si es 0, significa que no había cupos.
         return $stmt->rowCount();
     }
+
+
 }
 ?>

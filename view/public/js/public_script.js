@@ -121,4 +121,29 @@ $(document).ready(function() {
             }
         });
     });
+
+
+    // --- LÓGICA PARA MOSTRAR/OCULTAR CAMPOS DE PAGO ---
+    $('#tipo_entrada_select').on('change', function() {
+        // Obtenemos el precio del 'data-precio' de la opción seleccionada
+        const precio = $(this).find('option:selected').data('precio');
+
+        // Seleccionamos los campos de pago
+        const campoTransaccion = $('#campo-transaccion');
+        const campoComprobante = $('#campo-comprobante');
+
+        if (precio > 0) {
+            // Si el precio es mayor a 0, mostramos los campos y los hacemos obligatorios
+            campoTransaccion.show();
+            campoTransaccion.find('input').prop('required', true);
+            campoComprobante.show();
+            campoComprobante.find('input').prop('required', true);
+        } else {
+            // Si es 0 (gratuito), los ocultamos y quitamos el 'required'
+            campoTransaccion.hide();
+            campoTransaccion.find('input').prop('required', false);
+            campoComprobante.hide();
+            campoComprobante.find('input').prop('required', false);
+        }
+    });
 });
