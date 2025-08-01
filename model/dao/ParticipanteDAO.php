@@ -110,5 +110,24 @@ class ParticipanteDAO {
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * ¡NUEVA FUNCIÓN!
+     * Obtiene todos los participantes registrados en un evento específico.
+     */
+    public function getParticipantesPorEventoId($id_evento) {
+        $query = "
+            SELECT p.nombres, p.apellidos, p.cedula, p.email, p.ruta_comprobante, te.nombre AS nombre_entrada
+            FROM participantes p
+            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+            JOIN calendarios c ON te.id_calendario = c.id
+            WHERE c.id_evento = :id_evento
+            ORDER BY p.apellidos, p.nombres
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

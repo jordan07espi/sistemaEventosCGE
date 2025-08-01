@@ -33,6 +33,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="lugares.php">Lugares</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="participantes.php">Participantes</a>
+                        </li>
                     </ul>
                 </div>
             </div>

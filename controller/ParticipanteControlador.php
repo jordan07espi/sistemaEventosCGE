@@ -5,6 +5,23 @@ require_once __DIR__ . '/../model/dao/TipoEntradaDAO.php';
 header('Content-Type: application/json');
 $response = ['status' => 'error', 'errors' => ['Petición no válida.']];
 
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    header('Content-Type: application/json');
+    $response = ['status' => 'error', 'message' => 'No se especificó un evento.'];
+    
+    if (isset($_GET['id_evento'])) {
+        $participanteDAO = new ParticipanteDAO();
+        $participantes = $participanteDAO->getParticipantesPorEventoId($_GET['id_evento']);
+        $response = ['status' => 'success', 'data' => $participantes];
+    }
+    
+    echo json_encode($response);
+    exit();
+}
+
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = [];
     $participanteDAO = new ParticipanteDAO();

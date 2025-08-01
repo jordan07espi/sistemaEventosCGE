@@ -77,6 +77,42 @@ function renderizarTablaEventos(eventos) {
 }
 
 // =============================================================
+// LÓGICA PARA EL MÓDULO DE PARTICIPANTES
+// =============================================================
+
+function renderizarTablaParticipantes(participantes) {
+    const tablaBody = $('#tabla-participantes-body');
+    tablaBody.empty();
+
+    if (!participantes || participantes.length === 0) {
+        tablaBody.append('<tr><td colspan="5" class="text-center">No hay participantes registrados en este evento.</td></tr>');
+        return;
+    }
+
+    participantes.forEach(p => {
+        // Creamos un enlace para el comprobante, si existe y no es 'N/A'
+        let enlaceComprobante = 'N/A';
+        if (p.ruta_comprobante && p.ruta_comprobante !== 'N/A') {
+            // La ruta desde el admin es diferente a la pública
+            enlaceComprobante = `<a href="../${p.ruta_comprobante}" target="_blank" class="btn btn-outline-info btn-sm">Ver</a>`;
+        }
+
+        const fila = `
+            <tr>
+                <td>${p.nombres} ${p.apellidos}</td>
+                <td>${p.cedula}</td>
+                <td>${p.email}</td>
+                <td><span class="badge bg-success">${p.nombre_entrada}</span></td>
+                <td>${enlaceComprobante}</td>
+            </tr>
+        `;
+        tablaBody.append(fila);
+    });
+}
+
+
+
+// =============================================================
 // CÓDIGO PRINCIPAL
 // =============================================================
 $(document).ready(function() {
@@ -171,4 +207,36 @@ $(document).ready(function() {
             error: () => alert('Ocurrió un error de comunicación.')
         });
     });
+
+    
+    // --- LÓGICA PARA EL MÓDULO DE PARTICIPANTES (CORREGIDO) ---
+    if ($('#evento-select').length) {
+        $('#evento-select').on('change', function() {
+            const idEvento = $(this).val();
+            const tablaBody = $('#tabla-participantes-body');
+            const tituloTabla = $('#titulo-tabla-participantes');
+
+            if (idEvento) {
+                tituloTabla.text(`Participantes Registrados en "${$(this).find('option:selected').text()}"`).show();
+                tablaBody.html('<tr><td colspan="5" class="text-center">Cargando participantes...</td></tr>');
+                
+                $.ajax({
+                    url: basePath + 'ParticipanteControlador.php', // Usamos la ruta base
+                    type: 'GET',
+                    data: { id_evento: idEvento },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            renderizarTablaParticipantes(response.data);
+                        } else {
+                            tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error al cargar los datos.</td></tr>');
+                        }
+                    },
+                    error: function() {
+                        tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error de comunicación.</td></tr>');
+                    }
+                });
+            }
+        });
+    }
 }); 
