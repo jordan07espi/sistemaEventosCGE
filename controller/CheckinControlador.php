@@ -8,12 +8,29 @@ $participanteDAO = new ParticipanteDAO();
 // --- LÓGICA PARA PETICIONES GET (LISTAR ASISTENCIA) ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['id_evento'])) {
-        $participantes = $participanteDAO->getParticipantesParaCheckin($_GET['id_evento'], $_GET['busqueda'] ?? '');
-        $response = ['status' => 'success', 'data' => $participantes];
+        $id_evento = $_GET['id_evento'];
+        $busqueda = $_GET['busqueda'] ?? '';
+        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+        $limite = 1; // Puedes cambiar este límite si lo deseas
+
+        $participantes = $participanteDAO->getParticipantesParaCheckin($id_evento, $busqueda, $pagina, $limite);
+        $total = $participanteDAO->contarParticipantesParaCheckin($id_evento, $busqueda);
+        
+        $response = [
+            'status' => 'success', 
+            'data' => $participantes,
+            'paginacion' => [
+                'total' => $total,
+                'pagina' => $pagina,
+                'limite' => $limite,
+                'total_paginas' => ceil($total / $limite)
+            ]
+        ];
     }
     echo json_encode($response);
     exit();
 }
+
 
 // --- LÓGICA PARA PETICIONES POST (REGISTRAR ASISTENCIA) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

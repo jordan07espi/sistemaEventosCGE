@@ -161,10 +161,11 @@ class ParticipanteDAO {
     }
 
     /**
-     * ¡NUEVA FUNCIÓN!
-     * Obtiene todos los participantes de un evento con su estado de asistencia para la tabla de check-in.
+     * ¡FUNCIÓN ACTUALIZADA!
+     * Obtiene una lista paginada de participantes para la tabla de check-in.
      */
-    public function getParticipantesParaCheckin($id_evento, $busqueda = '') {
+    public function getParticipantesParaCheckin($id_evento, $busqueda = '', $pagina = 1, $limite = 25) {
+        $offset = ($pagina - 1) * $limite;
         $busqueda_like = '%' . $busqueda . '%';
         $query = "
             SELECT p.id, p.nombres, p.apellidos, p.cedula, p.asistencia
@@ -174,10 +175,13 @@ class ParticipanteDAO {
             WHERE c.id_evento = :id_evento AND 
                   (p.nombres LIKE :busqueda OR p.apellidos LIKE :busqueda OR p.cedula LIKE :busqueda)
             ORDER BY p.apellidos, p.nombres
+            LIMIT :limit OFFSET :offset
         ";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
         $stmt->bindParam(':busqueda', $busqueda_like);
+        $stmt->bindParam(':limit', $limite, PDO::PARAM_INT);
+        $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -209,6 +213,27 @@ class ParticipanteDAO {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id_participante', $id_participante, PDO::PARAM_INT);
         return $stmt->execute();
+    }
+
+    /**
+     * ¡NUEVA FUNCIÓN!
+     * Cuenta el total de participantes para la paginación del check-in.
+     */
+    public function contarParticipantesParaCheckin($id_evento, $busqueda = '') {
+        $busqueda_like = '%' . $busqueda . '%';
+        $query = "
+            SELECT COUNT(p.id)
+            FROM participantes p
+            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+            JOIN calendarios c ON te.id_calendario = c.id
+            WHERE c.id_evento = :id_evento AND
+                  (p.nombres LIKE :busqueda OR p.apellidos LIKE :busqueda OR p.cedula LIKE :busqueda)
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        $stmt->bindParam(':busqueda', $busqueda_like);
+        $stmt->execute();
+        return $stmt->fetchColumn();
     }
 }
 ?>

@@ -275,6 +275,9 @@ $(document).ready(function() {
         });
     }
 
+    // =============================================================
+    // LÓGICA PARA EL MÓDULO DE ESCANEO QR (check-in)
+    // =============================================================
     if ($('#qr-reader').length) { // Si estamos en la página de escaneo
         let html5QrCode = null;
         let idEventoSeleccionado = null;
@@ -315,16 +318,31 @@ $(document).ready(function() {
                 tablaBody.append(fila);
             });
         }
+
+        // ¡NUEVA FUNCIÓN PARA RENDERIZAR PAGINACIÓN DE ASISTENCIA!
+        function renderizarPaginacionAsistencia(paginacion) {
+            const container = $('#pagination-asistencia-container');
+            container.empty();
+            if (!paginacion || paginacion.total_paginas <= 1) return;
+
+            let html = '<nav><ul class="pagination">';
+            for (let i = 1; i <= paginacion.total_paginas; i++) {
+                html += `<li class="page-item ${i === paginacion.pagina ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            }
+            html += '</ul></nav>';
+            container.html(html);
+        }
         
-        // Función para cargar la lista de participantes
-        function cargarAsistencia() {
+        // Función para cargar la lista de participantes (ACTUALIZADA)
+        function cargarAsistencia(pagina = 1) {
             if (!idEventoSeleccionado) return;
             participantesContainer.show();
             $('#tabla-asistencia-body').html('<tr><td colspan="4" class="text-center">Cargando...</td></tr>');
             
-            $.get('../../controller/CheckinControlador.php', { id_evento: idEventoSeleccionado, busqueda: busquedaAsistencia }, function(response) {
+            $.get('../../controller/CheckinControlador.php', { id_evento: idEventoSeleccionado, busqueda: busquedaAsistencia, pagina: pagina }, function(response) {
                 if(response.status === 'success') {
                     renderizarTablaAsistencia(response.data);
+                    renderizarPaginacionAsistencia(response.paginacion); // Llamamos a la nueva función
                 }
             }, 'json');
         }
@@ -343,6 +361,15 @@ $(document).ready(function() {
         searchInput.on('keyup', function() {
             busquedaAsistencia = $(this).val();
             cargarAsistencia();
+        });
+
+        // ¡NUEVO MANEJADOR PARA LOS BOTONES DE PAGINACIÓN!
+        $('#pagination-asistencia-container').on('click', 'a.page-link', function(e) {
+            e.preventDefault();
+            const pagina = $(this).data('page');
+            if (pagina && !$(this).parent().hasClass('disabled')) {
+                cargarAsistencia(pagina);
+            }
         });
 
         // Botón Iniciar Cámara
@@ -403,5 +430,8 @@ $(document).ready(function() {
             }, 'json');
         }
     }
+
+
+
 
 });
