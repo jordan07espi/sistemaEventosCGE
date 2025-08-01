@@ -6,17 +6,35 @@ header('Content-Type: application/json');
 
 // --- MANEJADOR PARA SOLICITUDES GET (PANEL DE ADMIN) ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    header('Content-Type: application/json');
     $response = ['status' => 'error', 'message' => 'No se especificó un evento.'];
     
     if (isset($_GET['id_evento'])) {
         $participanteDAO = new ParticipanteDAO();
-        $participantes = $participanteDAO->getParticipantesPorEventoId($_GET['id_evento']);
-        $response = ['status' => 'success', 'data' => $participantes];
+        $id_evento = $_GET['id_evento'];
+        $busqueda = $_GET['busqueda'] ?? '';
+        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+        $limite = 1; // Registros por página
+
+        $participantes = $participanteDAO->getParticipantesPorEventoId($id_evento, $busqueda, $pagina, $limite);
+        $total = $participanteDAO->contarParticipantesPorEventoId($id_evento, $busqueda);
+        
+        $response = [
+            'status' => 'success', 
+            'data' => $participantes,
+            'paginacion' => [
+                'total' => $total,
+                'pagina' => $pagina,
+                'limite' => $limite,
+                'total_paginas' => ceil($total / $limite)
+            ]
+        ];
     }
     
     echo json_encode($response);
     exit();
 }
+
 
 
 

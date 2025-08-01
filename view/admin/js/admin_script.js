@@ -108,6 +108,26 @@ function renderizarTablaParticipantes(participantes) {
         `;
         tablaBody.append(fila);
     });
+
+
+}
+
+function renderizarPaginacion(paginacion) {
+    const container = $('#pagination-container');
+    container.empty();
+    if (paginacion.total_paginas <= 1) return;
+
+    let html = '<nav><ul class="pagination">';
+    // Botón Anterior
+    html += `<li class="page-item ${paginacion.pagina <= 1 ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${paginacion.pagina - 1}">Anterior</a></li>`;
+    // Números de página
+    for (let i = 1; i <= paginacion.total_paginas; i++) {
+        html += `<li class="page-item ${i === paginacion.pagina ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+    }
+    // Botón Siguiente
+    html += `<li class="page-item ${paginacion.pagina >= paginacion.total_paginas ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${paginacion.pagina + 1}">Siguiente</a></li>`;
+    html += '</ul></nav>';
+    container.html(html);
 }
 
 
@@ -209,35 +229,48 @@ $(document).ready(function() {
     });
 
     
-    // --- LÓGICA PARA EL MÓDULO DE PARTICIPANTES (CORREGIDO) ---
+    // --- LÓGICA PARA EL MÓDULO DE PARTICIPANTES (ACTUALIZADA) ---
     if ($('#evento-select').length) {
-        $('#evento-select').on('change', function() {
-            const idEvento = $(this).val();
-            const tablaBody = $('#tabla-participantes-body');
-            const tituloTabla = $('#titulo-tabla-participantes');
+        let idEventoSeleccionado = null;
+        let busquedaActual = '';
 
-            if (idEvento) {
-                tituloTabla.text(`Participantes Registrados en "${$(this).find('option:selected').text()}"`).show();
-                tablaBody.html('<tr><td colspan="5" class="text-center">Cargando participantes...</td></tr>');
-                
-                $.ajax({
-                    url: '/sistemaEventos/controller/ParticipanteControlador.php',
-                    type: 'GET',
-                    data: { id_evento: idEvento },
-                    dataType: 'json',
-                    success: function(response) {
-                        console.log('Respuesta del servidor:', response); // Para depuración
-                        if (response.status === 'success') {
-                            renderizarTablaParticipantes(response.data);
-                        } else {
-                            tablaBody.html(`<tr><td colspan="5" class="text-center text-danger">Error: ${response.message}</td></tr>`);
-                        }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.error('Error de AJAX:', textStatus, errorThrown); // Para depuración
-                        tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error de comunicación con el servidor. Revisa la consola para más detalles.</td></tr>');
-                    }
-                });
+        function cargarParticipantes(pagina = 1) {
+            if (!idEventoSeleccionado) return;
+            const tablaBody = $('#tabla-participantes-body');
+            tablaBody.html('<tr><td colspan="5" class="text-center">Cargando participantes...</td></tr>');
+            
+            $.ajax({
+                url: '../../controller/ParticipanteControlador.php',
+                type: 'GET',
+                data: { id_evento: idEventoSeleccionado, busqueda: busquedaActual, pagina: pagina },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        renderizarTablaParticipantes(response.data);
+                        renderizarPaginacion(response.paginacion);
+                    } else { /* ... (manejo de error) ... */ }
+                },
+                error: function() { /* ... (manejo de error) ... */ }
+            });
+        }
+
+        $('#evento-select').on('change', function() {
+            idEventoSeleccionado = $(this).val();
+            busquedaActual = ''; // Reseteamos la búsqueda
+            $('#search-participante').val('').show(); // Mostramos y limpiamos la barra de búsqueda
+            cargarParticipantes();
+        });
+
+        $('#search-participante').on('keyup', function() {
+            busquedaActual = $(this).val();
+            cargarParticipantes(); // La búsqueda siempre vuelve a la página 1
+        });
+
+        $('#pagination-container').on('click', 'a.page-link', function(e) {
+            e.preventDefault();
+            const pagina = $(this).data('page');
+            if (pagina) {
+                cargarParticipantes(pagina);
             }
         });
     }
