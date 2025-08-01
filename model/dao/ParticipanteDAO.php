@@ -31,14 +31,19 @@ class ParticipanteDAO {
     }
 
     /**
-     * Verifica si un número de transacción ya ha sido registrado en el sistema.
+     * Verifica si una combinación de número de transacción Y banco ya ha sido registrada.
      * @param string $numero_transaccion El número de la transacción.
-     * @return bool True si ya existe, false si no.
+     * @param string $banco El nombre del banco.
+     * @return bool True si la combinación ya existe, false si no.
      */
-    public function transaccionYaRegistrada($numero_transaccion) {
-        $query = "SELECT COUNT(*) FROM participantes WHERE numero_transaccion = :numero_transaccion";
+    public function transaccionYaRegistrada($numero_transaccion, $banco) {
+        // La consulta ahora busca una fila donde AMBOS, el número y el banco, coincidan.
+        $query = "SELECT COUNT(*) FROM participantes 
+                  WHERE numero_transaccion = :numero_transaccion AND banco = :banco";
+        
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':numero_transaccion', $numero_transaccion);
+        $stmt->bindParam(':banco', $banco);
         $stmt->execute();
         return $stmt->fetchColumn() > 0;
     }

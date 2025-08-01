@@ -148,10 +148,16 @@ include 'partials/header.php';
                     </div>
 
                     <div id="campo-banco" class="mb-3" style="display:none;">
-                        <label class="form-label">Banco de la Transacción</label>
+                        <label class="form-label">Banco desde donde realizó el pago</label>
                         <select name="banco" class="form-select">
                             <option value="Banco Pichincha">Banco Pichincha</option>
                             <option value="Banco del Pacifico">Banco del Pacífico</option>
+                            <option value="Banco de Guayaquil">Banco de Guayaquil</option>
+                            <option value="Produbanco">Produbanco</option>
+                            <option value="Banco del Austro">Banco del Austro</option>
+                            <option value="Banco Bolivariano">Banco Bolivariano</option>
+                            <option value="Banco Internacional">Banco Internacional</option>
+                            <option value="Banco General Rumiñahui">Banco General Rumiñahui</option>
                             <option value="Otro">Otro Banco</option>
                         </select>
                     </div>

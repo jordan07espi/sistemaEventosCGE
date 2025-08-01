@@ -59,9 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!isset($_FILES['comprobante']) || $_FILES['comprobante']['error'] != 0) $errors[] = 'Es obligatorio subir el comprobante.';
     }
 
+    // Si no hay errores de formato, procedemos a validar contra la BD
     if (empty($errors)) {
-        if ($participanteDAO->cedulaYaRegistradaEnEvento($cedula, $id_evento)) $errors[] = "La cédula '$cedula' ya está registrada en este evento.";
-        if (!$esGratuito && !empty($numero_transaccion) && $participanteDAO->transaccionYaRegistrada($numero_transaccion)) $errors[] = "El número de transacción '$numero_transaccion' ya ha sido utilizado.";
+        if ($participanteDAO->cedulaYaRegistradaEnEvento($cedula, $id_evento)) {
+            $errors[] = "La cédula '$cedula' ya está registrada en este evento.";
+        }
+        // Ahora pasamos ambos parámetros a la función de validación
+        if (!$esGratuito && !empty($numero_transaccion) && $participanteDAO->transaccionYaRegistrada($numero_transaccion, $banco)) {
+            $errors[] = "El número de transacción '$numero_transaccion' del banco '$banco' ya ha sido utilizado.";
+        }
     }
 
     // --- Procesamiento ---
