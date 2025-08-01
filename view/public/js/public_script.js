@@ -87,14 +87,12 @@ $(document).ready(function() {
     // --- LÓGICA PARA MOSTRAR/OCULTAR CAMPOS DE PAGO ---
     $('#tipo_entrada_select').on('change', function() {
         const precio = parseFloat($(this).find('option:selected').data('precio'));
-
-        // Seleccionamos los 3 campos de pago
+        
         const campoBanco = $('#campo-banco');
         const campoTransaccion = $('#campo-transaccion');
         const campoComprobante = $('#campo-comprobante');
 
         if (precio > 0) {
-            // Si hay costo, mostramos los campos y los hacemos obligatorios
             campoBanco.show();
             campoBanco.find('select').prop('required', true);
             campoTransaccion.show();
@@ -102,7 +100,6 @@ $(document).ready(function() {
             campoComprobante.show();
             campoComprobante.find('input').prop('required', true);
         } else {
-            // Si es gratuito, los ocultamos y quitamos el 'required'
             campoBanco.hide();
             campoBanco.find('select').prop('required', false);
             campoTransaccion.hide();
@@ -110,12 +107,12 @@ $(document).ready(function() {
             campoComprobante.hide();
             campoComprobante.find('input').prop('required', false);
         }
-    }).trigger('change'); // Hacemos que se ejecute al cargar la página para establecer el estado inicial
+    }).trigger('change'); // Ejecutar al cargar para el estado inicial
 
 
-    // --- LÓGICA DE ENVÍO AJAX DEL FORMULARIO ---
+    // --- LÓGICA DE ENVÍO AJAX CON REDIRECCIÓN A PDF ---
     $('#form-registro-participante').on('submit', function(e) {
-        e.preventDefault();
+        e.preventDefault(); // Prevenimos el envío tradicional
         const form = $(this);
         const submitButton = form.find('button[type="submit"]');
         const originalButtonText = submitButton.html();
@@ -132,16 +129,20 @@ $(document).ready(function() {
             success: function(response) {
                 const alertContainer = $('#alert-container');
                 if (response.status === 'success') {
-                    alertContainer.html(`<div class="alert alert-success">${response.message}</div>`);
+                    alertContainer.html(`<div class="alert alert-success">${response.message} Se descargará tu boleto en unos segundos...</div>`);
                     form[0].reset();
-                    // Ocultamos de nuevo los campos de pago tras un registro exitoso
                     $('#campo-banco, #campo-transaccion, #campo-comprobante').hide();
+                    
+                    // Redirigir a la página de generación de PDF después de un par de segundos
+                    setTimeout(function() {
+                        window.location.href = `../../controller/generar_pdf.php?id_participante=${response.id_participante}`;
+                        // Limpiamos el mensaje de éxito después de redirigir
+                        alertContainer.html(''); 
+                    }, 2500);
+
                 } else {
-                    // Si hay errores, los mostramos en una lista
                     let errorHtml = '<div class="alert alert-danger"><ul>';
-                    response.errors.forEach(error => {
-                        errorHtml += `<li>${error}</li>`;
-                    });
+                    response.errors.forEach(error => { errorHtml += `<li>${error}</li>`; });
                     errorHtml += '</ul></div>';
                     alertContainer.html(errorHtml);
                 }
@@ -150,7 +151,10 @@ $(document).ready(function() {
                 $('#alert-container').html('<div class="alert alert-danger">Ocurrió un error de comunicación con el servidor.</div>');
             },
             complete: function() {
-                submitButton.prop('disabled', false).html(originalButtonText);
+                // Restauramos el botón después de la redirección o el error
+                setTimeout(function(){
+                    submitButton.prop('disabled', false).html(originalButtonText);
+                }, 2500);
             }
         });
     });

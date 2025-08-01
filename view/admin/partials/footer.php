@@ -1,6 +1,6 @@
 </main>
     <footer class="text-center mt-4 mb-4 border-top pt-3">
-        <p>&copy; <?php echo date('Y'); ?> Sistema de Gestión de Eventos <strong>CesletiumSoft</strong> | CGE. Todos los derechos reservados.</p>
+        <p>&copy; <?php echo date('Y'); ?> Sistema de Gestión de Eventos <strong>CelestiumSoft</strong> | CGE. Todos los derechos reservados.</p>
     </footer>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

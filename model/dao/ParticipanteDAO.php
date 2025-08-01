@@ -80,17 +80,30 @@ class ParticipanteDAO {
             $stmt->bindParam(':banco', $banco); // <-- ¡PARÁMETRO AÑADIDO!
             $stmt->bindParam(':ruta_comprobante', $ruta_comprobante);
             $stmt->execute();
-
-            // 3. Si todo fue bien, confirmamos los cambios
+            $ultimoId = $this->conn->lastInsertId(); // Obtenemos el ID del registro recién insertado
             $this->conn->commit();
-            return true;
-
+            return $ultimoId; // Devolvemos el ID
         } catch (Exception $e) {
-            // Si algo falla, revertimos todos los cambios
             $this->conn->rollBack();
-            // Propagamos la excepción para que el controlador la maneje
             throw $e;
         }
+    }
+
+
+    public function getUltimoParticipanteRegistradoPorCedula($cedula) {
+        $query = "SELECT * FROM participantes WHERE cedula = :cedula ORDER BY id DESC LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getParticipantePorId($id) {
+        $query = "SELECT * FROM participantes WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
 ?>

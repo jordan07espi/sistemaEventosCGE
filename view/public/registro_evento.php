@@ -72,8 +72,14 @@ include 'partials/header.php';
                 <h4 class="card-title mb-4">Formulario de Registro</h4>
                 
                 <div id="alert-container"></div>
+                <?php
+                if (isset($_SESSION['mensaje_error'])) {
+                    echo '<div class="alert alert-danger mt-3" role="alert">' . $_SESSION['mensaje_error'] . '</div>';
+                    unset($_SESSION['mensaje_error']); // Limpiamos el mensaje para no mostrarlo de nuevo
+                }
+                ?>
 
-                <form id="form-registro-participante" method="POST" enctype="multipart/form-data" novalidate>
+                <form id="form-registro-participante" action="../../controller/ParticipanteControlador.php" method="POST" enctype="multipart/form-data" novalidate>
                     <input type="hidden" name="id_evento" value="<?php echo $id_evento; ?>">
                     
                     <div class="row">

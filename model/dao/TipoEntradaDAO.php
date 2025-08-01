@@ -10,7 +10,6 @@ class TipoEntradaDAO {
     }
 
     public function getTiposEntradaPorCalendarioId($calendario_id) {
-        
         $query = "SELECT id, nombre, precio, cantidad_total, cantidad_disponible, detalle 
                   FROM tipos_entrada WHERE id_calendario = :calendario_id";
         $stmt = $this->conn->prepare($query);
@@ -39,23 +38,41 @@ class TipoEntradaDAO {
         return $stmt->execute();
     }
 
-    /**
-     * ¡NUEVA FUNCIÓN!
-     * Decrementa en uno la cantidad de cupos disponibles para un tipo de entrada.
-     */
     public function decrementarCupo($id_tipo_entrada) {
         $query = "UPDATE tipos_entrada 
                   SET cantidad_disponible = cantidad_disponible - 1 
                   WHERE id = :id_tipo_entrada AND cantidad_disponible > 0";
-        
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id_tipo_entrada', $id_tipo_entrada, PDO::PARAM_INT);
         $stmt->execute();
-        
-        // Devolvemos el número de filas afectadas. Si es 0, significa que no había cupos.
         return $stmt->rowCount();
     }
 
-
+    /**
+     * ¡FUNCIÓN CORREGIDA!
+     * Obtiene todos los detalles necesarios para generar el boleto en PDF.
+     */
+    public function getDetallesEntradaParaPDF($id_tipo_entrada) {
+        $query = "
+            SELECT 
+                te.nombre AS nombre_entrada,
+                te.precio,
+                te.detalle AS detalle_entrada,
+                c.fecha,
+                c.hora,
+                l.nombre_establecimiento AS nombre_lugar,
+                e.nombre AS nombre_evento,
+                e.id AS id_evento /* ¡CAMBIO CLAVE AQUÍ! */
+            FROM tipos_entrada te
+            JOIN calendarios c ON te.id_calendario = c.id
+            JOIN lugares l ON c.id_lugar = l.id
+            JOIN eventos e ON c.id_evento = e.id
+            WHERE te.id = :id_tipo_entrada
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_tipo_entrada', $id_tipo_entrada, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 }
 ?>
