@@ -26,14 +26,6 @@ $calendarios = $calendarioDAO->getCalendariosPorEventoId($id_evento);
 
 $tipoEntradaDAO = new TipoEntradaDAO();
 
-// --- CÓDIGO PARA CALCULAR CUPOS TOTALES DISPONIBLES ---
-$cuposTotalesDisponibles = 0;
-foreach ($calendarios as $cal) {
-    $tipos = $tipoEntradaDAO->getTiposEntradaPorCalendarioId($cal['id']);
-    foreach ($tipos as $tipo) {
-        $cuposTotalesDisponibles += $tipo['cantidad_disponible'];
-    }
-}
 
 include 'partials/header.php';
 ?>
@@ -47,7 +39,27 @@ include 'partials/header.php';
                 <p class="lead text-muted"><?php echo nl2br(htmlspecialchars($evento['descripcion'])); ?></p>
                 <hr>
                 
-                <h4>Cupos Disponibles: <span class="badge bg-primary"><?php echo $cuposTotalesDisponibles; ?></span></h4>
+                <h4>Cupos Disponibles</h4>
+                <ul class="list-unstyled">
+                    <?php 
+                    $hayCupos = false;
+                    foreach($calendarios as $cal): 
+                        $tipos = $tipoEntradaDAO->getTiposEntradaPorCalendarioId($cal['id']);
+                        foreach($tipos as $tipo):
+                            $hayCupos = true;
+                    ?>
+                        <li>
+                            <strong><?php echo htmlspecialchars($tipo['nombre']); ?>:</strong>
+                            <span class="badge bg-primary ms-2"><?php echo $tipo['cantidad_disponible']; ?> restantes</span>
+                        </li>
+                    <?php 
+                        endforeach; 
+                    endforeach; 
+                    if (!$hayCupos) {
+                        echo "<p>No hay tipos de entrada definidos para este evento.</p>";
+                    }
+                    ?>
+                </ul>
                 <hr>
 
                 <h4>Funciones Disponibles</h4>
