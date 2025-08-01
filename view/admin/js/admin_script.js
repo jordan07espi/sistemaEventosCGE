@@ -274,4 +274,134 @@ $(document).ready(function() {
             }
         });
     }
+
+    if ($('#qr-reader').length) { // Si estamos en la página de escaneo
+        let html5QrCode = null;
+        let idEventoSeleccionado = null;
+        let busquedaAsistencia = '';
+
+        const resultContainer = $('#scan-result-container');
+        const searchInput = $('#search-asistencia');
+        const startBtn = $('#start-scan-btn');
+        const stopBtn = $('#stop-scan-btn');
+        const scannerContainer = $('#scanner-container');
+        const participantesContainer = $('#participantes-checkin-container');
+
+        // Función para renderizar la tabla de asistencia
+        function renderizarTablaAsistencia(participantes) {
+            const tablaBody = $('#tabla-asistencia-body');
+            tablaBody.empty();
+            if (!participantes || participantes.length === 0) {
+                tablaBody.append('<tr><td colspan="4" class="text-center">No se encontraron participantes.</td></tr>');
+                return;
+            }
+            participantes.forEach(p => {
+                const estado = p.asistencia === 'Registrado' 
+                    ? '<span class="badge bg-success">Registrado</span>'
+                    : '<span class="badge bg-warning text-dark">Pendiente</span>';
+                
+                const accion = p.asistencia !== 'Registrado'
+                    ? `<button class="btn btn-success btn-sm btn-marcar-asistencia" data-id-participante="${p.id}">Marcar Asistencia</button>`
+                    : '';
+
+                const fila = `
+                    <tr id="participante-row-${p.id}">
+                        <td>${p.apellidos} ${p.nombres}</td>
+                        <td>${p.cedula}</td>
+                        <td>${estado}</td>
+                        <td>${accion}</td>
+                    </tr>
+                `;
+                tablaBody.append(fila);
+            });
+        }
+        
+        // Función para cargar la lista de participantes
+        function cargarAsistencia() {
+            if (!idEventoSeleccionado) return;
+            participantesContainer.show();
+            $('#tabla-asistencia-body').html('<tr><td colspan="4" class="text-center">Cargando...</td></tr>');
+            
+            $.get('../../controller/CheckinControlador.php', { id_evento: idEventoSeleccionado, busqueda: busquedaAsistencia }, function(response) {
+                if(response.status === 'success') {
+                    renderizarTablaAsistencia(response.data);
+                }
+            }, 'json');
+        }
+
+        // Cuando se selecciona un evento
+        $('#evento-checkin-select').on('change', function() {
+            idEventoSeleccionado = $(this).val();
+            searchInput.prop('disabled', false);
+            startBtn.prop('disabled', false);
+            busquedaAsistencia = '';
+            searchInput.val('');
+            cargarAsistencia();
+        });
+
+        // Cuando se busca en la barra
+        searchInput.on('keyup', function() {
+            busquedaAsistencia = $(this).val();
+            cargarAsistencia();
+        });
+
+        // Botón Iniciar Cámara
+        startBtn.on('click', function() {
+            scannerContainer.slideDown();
+            html5QrCode = new Html5Qrcode("qr-reader");
+            $(this).hide();
+            stopBtn.show();
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, () => {});
+        });
+
+        // Botón Detener Cámara
+        stopBtn.on('click', function() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    scannerContainer.slideUp();
+                    $(this).hide();
+                    startBtn.show();
+                });
+            }
+        });
+
+        // Al escanear un QR
+        function onScanSuccess(decodedText, decodedResult) {
+            html5QrCode.pause();
+            verificarAsistencia(decodedText, idEventoSeleccionado, true);
+        }
+
+        // Al marcar asistencia manualmente
+        $('#tabla-asistencia-body').on('click', '.btn-marcar-asistencia', function() {
+            const idParticipante = $(this).data('id-participante');
+            verificarAsistencia(idParticipante, idEventoSeleccionado, false);
+        });
+
+        // Función central para verificar (por QR o manual)
+        function verificarAsistencia(valor, idEvento, esCedula) {
+            const postData = { id_evento: idEvento };
+            if (esCedula) {
+                postData.cedula = valor;
+            } else {
+                postData.id_participante = valor;
+            }
+
+            $.post('../../controller/CheckinControlador.php', postData, function(response) {
+                const alertClass = response.status === 'success' ? 'alert-success' : 'alert-danger';
+                let content = `<h5>${response.message}</h5>`;
+                if (response.participante) content += `<p class="mb-0">${response.participante}</p>`;
+                resultContainer.html(`<div class="alert ${alertClass}">${content}</div>`);
+
+                // Si fue exitoso, actualizamos la tabla
+                if (response.status === 'success') {
+                    cargarAsistencia();
+                }
+
+                if (esCedula) {
+                    setTimeout(() => { if (html5QrCode) html5QrCode.resume(); }, 2000);
+                }
+            }, 'json');
+        }
+    }
+
 });

@@ -159,5 +159,56 @@ class ParticipanteDAO {
         $stmt->execute();
         return $stmt->fetchColumn();
     }
+
+    /**
+     * ¡NUEVA FUNCIÓN!
+     * Obtiene todos los participantes de un evento con su estado de asistencia para la tabla de check-in.
+     */
+    public function getParticipantesParaCheckin($id_evento, $busqueda = '') {
+        $busqueda_like = '%' . $busqueda . '%';
+        $query = "
+            SELECT p.id, p.nombres, p.apellidos, p.cedula, p.asistencia
+            FROM participantes p
+            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+            JOIN calendarios c ON te.id_calendario = c.id
+            WHERE c.id_evento = :id_evento AND 
+                  (p.nombres LIKE :busqueda OR p.apellidos LIKE :busqueda OR p.cedula LIKE :busqueda)
+            ORDER BY p.apellidos, p.nombres
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        $stmt->bindParam(':busqueda', $busqueda_like);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Busca un participante por su cédula y el ID del evento al que se registró.
+     */
+    public function getParticipantePorCedulaYEvento($cedula, $id_evento) {
+        $query = "
+            SELECT p.id, p.nombres, p.apellidos, p.asistencia
+            FROM participantes p
+            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+            JOIN calendarios c ON te.id_calendario = c.id
+            WHERE p.cedula = :cedula AND c.id_evento = :id_evento
+            LIMIT 1
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Actualiza el estado de asistencia de un participante a 'Registrado'.
+     */
+    public function registrarAsistencia($id_participante) {
+        $query = "UPDATE participantes SET asistencia = 'Registrado' WHERE id = :id_participante";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_participante', $id_participante, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }
 ?>
