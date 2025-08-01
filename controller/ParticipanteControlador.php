@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $id_evento = $_GET['id_evento'];
         $busqueda = $_GET['busqueda'] ?? '';
         $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 1; // Registros por página
+        $limite = 25; // Registros por página
 
         $participantes = $participanteDAO->getParticipantesPorEventoId($id_evento, $busqueda, $pagina, $limite);
         $total = $participanteDAO->contarParticipantesPorEventoId($id_evento, $busqueda);
