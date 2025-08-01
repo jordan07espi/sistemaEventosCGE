@@ -3,11 +3,9 @@ require_once __DIR__ . '/../model/dao/ParticipanteDAO.php';
 require_once __DIR__ . '/../model/dao/TipoEntradaDAO.php';
 
 header('Content-Type: application/json');
-$response = ['status' => 'error', 'errors' => ['Petición no válida.']];
 
-
+// --- MANEJADOR PARA SOLICITUDES GET (PANEL DE ADMIN) ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    header('Content-Type: application/json');
     $response = ['status' => 'error', 'message' => 'No se especificó un evento.'];
     
     if (isset($_GET['id_evento'])) {
@@ -22,7 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
 
 
+// --- MANEJADOR PARA SOLICITUDES POST (FORMULARIO PÚBLICO) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $response = ['status' => 'error', 'errors' => ['Petición no válida.']];
     $errors = [];
     $participanteDAO = new ParticipanteDAO();
     $tipoEntradaDAO = new TipoEntradaDAO();

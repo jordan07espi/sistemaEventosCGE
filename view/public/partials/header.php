@@ -29,7 +29,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/sistemaEventos/index.php">Eventos del Instituto</a>
+            <a class="navbar-brand" href="/sistemaEventos/index.php">Eventos del Instituto CGE</a>
         </div>
     </nav>
     <main class="container py-5">

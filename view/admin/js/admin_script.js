@@ -90,11 +90,11 @@ function renderizarTablaParticipantes(participantes) {
     }
 
     participantes.forEach(p => {
-        // Creamos un enlace para el comprobante, si existe y no es 'N/A'
         let enlaceComprobante = 'N/A';
+        // ¡CAMBIO CLAVE AQUÍ!
+        // Usamos la ruta absoluta desde la raíz del sitio web.
         if (p.ruta_comprobante && p.ruta_comprobante !== 'N/A') {
-            // La ruta desde el admin es diferente a la pública
-            enlaceComprobante = `<a href="../${p.ruta_comprobante}" target="_blank" class="btn btn-outline-info btn-sm">Ver</a>`;
+            enlaceComprobante = `<a href="/sistemaEventos/${p.ruta_comprobante}" target="_blank" class="btn btn-outline-info btn-sm">Ver</a>`;
         }
 
         const fila = `
@@ -221,22 +221,24 @@ $(document).ready(function() {
                 tablaBody.html('<tr><td colspan="5" class="text-center">Cargando participantes...</td></tr>');
                 
                 $.ajax({
-                    url: basePath + 'ParticipanteControlador.php', // Usamos la ruta base
+                    url: '/sistemaEventos/controller/ParticipanteControlador.php',
                     type: 'GET',
                     data: { id_evento: idEvento },
                     dataType: 'json',
                     success: function(response) {
+                        console.log('Respuesta del servidor:', response); // Para depuración
                         if (response.status === 'success') {
                             renderizarTablaParticipantes(response.data);
                         } else {
-                            tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error al cargar los datos.</td></tr>');
+                            tablaBody.html(`<tr><td colspan="5" class="text-center text-danger">Error: ${response.message}</td></tr>`);
                         }
                     },
-                    error: function() {
-                        tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error de comunicación.</td></tr>');
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        console.error('Error de AJAX:', textStatus, errorThrown); // Para depuración
+                        tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error de comunicación con el servidor. Revisa la consola para más detalles.</td></tr>');
                     }
                 });
             }
         });
     }
-}); 
+});
