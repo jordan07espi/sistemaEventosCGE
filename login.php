@@ -19,8 +19,8 @@
             <?php endif; ?>
             <form action="controller/LoginControlador.php" method="POST">
                 <div class="mb-3">
-                    <label for="email" class="form-label">Correo Electrónico</label>
-                    <input type="email" name="email" id="email" class="form-control" required>
+                    <label for="cedula" class="form-label">Número de Cédula</label>
+                    <input type="text" name="cedula" id="cedula" class="form-control" required>
                 </div>
                 <div class="mb-3">
                     <label for="contrasena" class="form-label">Contraseña</label>

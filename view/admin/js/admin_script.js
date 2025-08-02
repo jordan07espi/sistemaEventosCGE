@@ -132,6 +132,27 @@ function renderizarPaginacion(paginacion) {
 
 
 
+function renderizarTablaUsuarios(usuarios) {
+    const tablaBody = $('#tabla-usuarios-body');
+    tablaBody.empty();
+    usuarios.forEach(user => {
+        const fila = `
+            <tr>
+                <td>${user.nombres} ${user.apellidos}</td>
+                <td>${user.cedula}</td>
+                <td>${user.email}</td>
+                <td><span class="badge bg-secondary">${user.nombre_rol}</span></td>
+                <td>
+                    <a href="form_usuario.php?id=${user.id}" class="btn btn-warning btn-sm">Editar</a>
+                    <button class="btn btn-info btn-sm btn-reset-pass" data-id="${user.id}" data-nombre="${user.nombres} ${user.apellidos}" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">Reset Pass</button>
+                    <button class="btn btn-danger btn-sm btn-eliminar-usuario" data-id="${user.id}">Eliminar</button>
+                </td>
+            </tr>`;
+        tablaBody.append(fila);
+    });
+}
+
+
 // =============================================================
 // CÓDIGO PRINCIPAL
 // =============================================================
@@ -495,6 +516,54 @@ $(document).ready(function() {
 
 
 
+    // --- DENTRO DE $(document).ready(function() { ... }); ---
+    if ($('#tabla-usuarios-body').length) {
+        $.get('../../controller/UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
+    }
 
+    $('#form-usuario').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            url: $(this).attr('action'), type: 'POST', data: $(this).serialize(), dataType: 'json',
+            success: r => {
+                if(r.status==='success'){ alert(r.message); window.location.href='usuarios.php'; } 
+                else { alert('Error: '+r.message); }
+            },
+            error: () => alert('Error de comunicación.')
+        });
+    });
+
+    $('#tabla-usuarios-body').on('click', '.btn-reset-pass', function() {
+        const id = $(this).data('id');
+        const nombre = $(this).data('nombre');
+        $('#reset-id-usuario').val(id);
+        $('#nombre-usuario-reset').text(nombre);
+    });
+
+    // Envío del formulario del modal
+    $('#form-reset-pass').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            url: '../../controller/UsuarioControlador.php', type: 'POST', data: $(this).serialize(), dataType: 'json',
+            success: r => {
+                if(r.status==='success'){
+                    alert(r.message);
+                    $('#resetPasswordModal').modal('hide');
+                    $(this)[0].reset();
+                } else { alert('Error: '+r.message); }
+            },
+            error: () => alert('Error de comunicación.')
+        });
+    });
+
+    $('#tabla-usuarios-body').on('click', '.btn-eliminar-usuario', function() {
+        if (!confirm('¿Seguro que quieres eliminar a este usuario?')) return;
+        const id = $(this).data('id');
+        $.post('../../controller/UsuarioControlador.php', { accion: 'eliminar', id_usuario: id }, r => {
+            if(r.status === 'success') {
+                $.get('../../controller/UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
+            } else { alert('Error: ' + r.message); }
+        }, 'json');
+    });
 
 });
