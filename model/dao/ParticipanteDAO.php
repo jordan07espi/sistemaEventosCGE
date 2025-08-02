@@ -216,7 +216,6 @@ class ParticipanteDAO {
     }
 
     /**
-     * ¡NUEVA FUNCIÓN!
      * Cuenta el total de participantes para la paginación del check-in.
      */
     public function contarParticipantesParaCheckin($id_evento, $busqueda = '') {
@@ -235,5 +234,27 @@ class ParticipanteDAO {
         $stmt->execute();
         return $stmt->fetchColumn();
     }
+
+     /**
+     * Obtiene todos los datos de los participantes de un evento para un reporte.
+     */
+    public function getParticipantesParaReporte($id_evento) {
+        $query = "
+            SELECT 
+                p.nombres, p.apellidos, p.cedula, p.email, p.telefono, 
+                p.numero_transaccion, p.banco, p.asistencia, p.fecha_registro,
+                te.nombre AS nombre_entrada
+            FROM participantes p
+            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+            JOIN calendarios c ON te.id_calendario = c.id
+            WHERE c.id_evento = :id_evento
+            ORDER BY p.apellidos, p.nombres
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }
 ?>

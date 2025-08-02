@@ -4,7 +4,12 @@ $eventoDAO = new EventoDAO();
 $eventos = $eventoDAO->getEventos();
 ?>
 <div class="container mt-4">
-    <h2>Gestión de Participantes</h2>
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Gestión de Participantes</h2>
+        <a href="#" id="export-excel-btn" class="btn btn-success" style="display: none;" target="_blank">
+            <i class="fas fa-file-excel"></i> Exportar a Excel
+        </a>
+    </div>
     <hr>
     <div class="card">
         <div class="card-header">

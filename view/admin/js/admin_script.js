@@ -229,10 +229,11 @@ $(document).ready(function() {
     });
 
     
-    // --- LÓGICA PARA EL MÓDULO DE PARTICIPANTES (ACTUALIZADA) ---
+    // --- LÓGICA PARA EL MÓDULO DE PARTICIPANTES ---
     if ($('#evento-select').length) {
         let idEventoSeleccionado = null;
         let busquedaActual = '';
+        const exportBtn = $('#export-excel-btn'); // Variable para el botón de exportar
 
         function cargarParticipantes(pagina = 1) {
             if (!idEventoSeleccionado) return;
@@ -248,16 +249,30 @@ $(document).ready(function() {
                     if (response.status === 'success') {
                         renderizarTablaParticipantes(response.data);
                         renderizarPaginacion(response.paginacion);
-                    } else { /* ... (manejo de error) ... */ }
+                    } else {
+                        tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error al cargar los datos.</td></tr>');
+                    }
                 },
-                error: function() { /* ... (manejo de error) ... */ }
+                error: function() {
+                    tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error de comunicación.</td></tr>');
+                }
             });
         }
 
         $('#evento-select').on('change', function() {
             idEventoSeleccionado = $(this).val();
-            busquedaActual = ''; // Reseteamos la búsqueda
-            $('#search-participante').val('').show(); // Mostramos y limpiamos la barra de búsqueda
+            busquedaActual = ''; 
+            $('#search-participante').val('').show();
+            
+            // --- Lógica para el botón de exportar ---
+            if (idEventoSeleccionado) {
+                // Construimos la URL para el reporte y la asignamos al botón
+                const urlReporte = `../../controller/ReporteControlador.php?id_evento=${idEventoSeleccionado}`;
+                exportBtn.attr('href', urlReporte).show();
+            } else {
+                exportBtn.hide();
+            }
+            
             cargarParticipantes();
         });
 
@@ -269,7 +284,7 @@ $(document).ready(function() {
         $('#pagination-container').on('click', 'a.page-link', function(e) {
             e.preventDefault();
             const pagina = $(this).data('page');
-            if (pagina) {
+            if (pagina && !$(this).parent().hasClass('disabled')) {
                 cargarParticipantes(pagina);
             }
         });
@@ -430,6 +445,9 @@ $(document).ready(function() {
             }, 'json');
         }
     }
+
+
+
 
 
 
