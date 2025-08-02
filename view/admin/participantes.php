@@ -1,3 +1,9 @@
+<?php 
+require_once __DIR__ . '/../../controller/seguridad.php'; 
+if (!in_array($_SESSION['user_role'], ['Admin', 'Secretaria'])) {
+    die("Acceso denegado.");
+}
+?>
 <?php
 // Incluimos el encabezado común
 include 'partials/header.php';

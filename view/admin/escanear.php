@@ -1,3 +1,9 @@
+<?php 
+require_once __DIR__ . '/../../controller/seguridad.php'; 
+if (!in_array($_SESSION['user_role'], ['Admin', 'Supervisor'])) {
+    die("Acceso denegado.");
+}
+?>
 <?php
 // Incluimos los DAOs para obtener la lista de eventos activos
 require_once __DIR__ . '/../../model/dao/EventoDAO.php';

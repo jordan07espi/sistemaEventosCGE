@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $id_evento = $_GET['id_evento'];
         $busqueda = $_GET['busqueda'] ?? '';
         $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 1; // Puedes cambiar este límite si lo deseas
+        $limite = 25; // Puedes cambiar este límite si lo deseas
 
         $participantes = $participanteDAO->getParticipantesParaCheckin($id_evento, $busqueda, $pagina, $limite);
         $total = $participanteDAO->contarParticipantesParaCheckin($id_evento, $busqueda);

@@ -70,5 +70,36 @@ class DashboardDAO {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+
+    /**
+     * Devuelve el número de participantes registrados en el mes actual.
+     */
+    public function getNuevosParticipantesMes() {
+        $query = "
+            SELECT COUNT(id) 
+            FROM participantes 
+            WHERE MONTH(fecha_registro) = MONTH(CURDATE()) AND YEAR(fecha_registro) = YEAR(CURDATE())
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchColumn();
+    }
+
+    /**
+     * Devuelve la suma de ingresos generados en el mes actual.
+     */
+    public function getIngresosMesActual() {
+        $query = "
+            SELECT SUM(te.precio) 
+            FROM participantes p
+            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+            WHERE MONTH(p.fecha_registro) = MONTH(CURDATE()) AND YEAR(p.fecha_registro) = YEAR(CURDATE())
+        ";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $total = $stmt->fetchColumn();
+        return $total ?? 0; // Devuelve 0 si no hay ingresos
+    }
 }
 ?>

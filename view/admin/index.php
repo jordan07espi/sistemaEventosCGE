@@ -1,3 +1,9 @@
+<?php 
+require_once __DIR__ . '/../../controller/seguridad.php'; 
+if ($_SESSION['user_role'] !== 'Admin') {
+    die("Acceso denegado."); // O redirigir
+}
+?>
 <?php
 // Incluimos el encabezado común para todas las páginas del panel
 include 'partials/header.php';
