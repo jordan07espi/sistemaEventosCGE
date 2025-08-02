@@ -446,6 +446,51 @@ $(document).ready(function() {
         }
     }
 
+    // --- LÓGICA PARA EL GRÁFICO DEL DASHBOARD ---
+    if ($('#participantesPorEventoChart').length) {
+        $.ajax({
+            url: '../../controller/DashboardControlador.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                const ctx = document.getElementById('participantesPorEventoChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar', // Tipo de gráfico: barras
+                    data: {
+                        labels: response.labels, // Nombres de los eventos
+                        datasets: [{
+                            label: 'Nº de Participantes',
+                            data: response.data, // Cantidad de participantes
+                            backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                            borderColor: 'rgba(78, 115, 223, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 10 // O ajusta según necesites
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false // Ocultamos la leyenda para un look más limpio
+                            }
+                        }
+                    }
+                });
+            },
+            error: function() {
+                // Manejo de error si no se pueden cargar los datos del gráfico
+                $('#participantesPorEventoChart').parent().html('<p class="text-center text-danger">No se pudieron cargar los datos del gráfico.</p>');
+            }
+        });
+    }
+
 
 
 
