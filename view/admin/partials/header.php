@@ -65,4 +65,4 @@
         </nav>
     </header>
 
-    <main>
+    <main class="container mt-4">

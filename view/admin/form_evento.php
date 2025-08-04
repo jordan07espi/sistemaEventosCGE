@@ -1,3 +1,10 @@
+<?php 
+require_once __DIR__ . '/../../controller/seguridad.php'; 
+if ($_SESSION['user_role'] !== 'Admin') {
+    die("Acceso denegado.");
+}
+?>
+
 <?php
 require_once __DIR__ . '/../../model/dao/EventoDAO.php';
 require_once __DIR__ . '/../../model/dao/CategoriaDAO.php';
@@ -17,8 +24,8 @@ $categorias = $categoriaDAO->getCategorias();
 include 'partials/header.php';
 ?>
 
-<div class="container mt-4">
-    <h2><?php echo $modoEdicion ? 'Editar Evento' : 'Crear Nuevo Evento'; ?></h2>
+
+<h2><?php echo $modoEdicion ? 'Editar Evento' : 'Crear Nuevo Evento'; ?></h2>
     <hr>
     <div class="card">
         <div class="card-body">
@@ -76,7 +83,7 @@ include 'partials/header.php';
             </form>
         </div>
     </div>
-</div>
+
 
 <?php
 include 'partials/footer.php';
