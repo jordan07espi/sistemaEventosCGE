@@ -136,10 +136,7 @@ include 'partials/header.php';
                     <div class="mb-3" id="campo-sede" style="display:none;">
                         <label class="form-label">Sede</label>
                         <select name="sede" id="sede_select" class="form-select">
-                            <option value="" disabled selected>-- Elige una sede --</option>
-                            <option value="Santo Domingo">SANTO DOMINGO</option>
-                            <option value="Quininde">QUININDÉ</option>
-                        </select>
+                            </select>
                     </div>
 
                     <div id="campos-instituto" style="display:none;">
@@ -158,7 +155,6 @@ include 'partials/header.php';
                                 <option value="NATUROPATIA">NATUROPATIA</option>
                                 <option value="GASTRONOMIA">GASTRONOMIA</option>
                                 <option value="MECANICA AUTOMOTRIZ">MECANICA AUTOMOTRIZ</option>
-                                
                             </select>
                         </div>
                         <div class="mb-3">

@@ -161,6 +161,53 @@ $(document).ready(function() {
 
 
     // --- LÓGICA PARA NUEVOS CAMPOS DINÁMICOS ---
+    // Definimos las sedes para cada tipo. ¡Puedes agregar o quitar sedes aquí fácilmente!
+    const sedes = {
+        'Instituto': [
+            { value: 'Santo Domingo', text: 'SANTO DOMINGO' },
+            { value: 'Quininde', text: 'QUININDÉ' },
+            { value: 'Quito', text: 'QUITO' },
+            { value: 'Machala', text: 'MACHALA' },
+            { value: 'Cayambe', text: 'CAYAMBE' },
+            { value: 'Quinche', text: 'QUINCHE' },
+            { value: 'Quevedo', text: 'QUEVEDO' },
+            { value: 'Cuenca', text: 'CUENCA' },
+            { value: 'Ambato', text: 'AMBATO' },
+            { value: 'Riobamba', text: 'RIOBAMBA' },
+            { value: 'Loja', text: 'LOJA' }
+        ],
+        'Capacitadora': [
+            { value: 'El Carmen', text: 'EL CARMEN' },
+            { value: 'Babahoyo', text: 'BABAHOYO' },
+            { value: 'Guayaquil', text: 'GUAYAQUIL' },
+            { value: 'Guayaquil Norte', text: 'GUAYAQUIL NORTE' },
+            { value: 'Manta', text: 'MANTA' },
+            { value: 'Quinindé 1', text: 'QUININDÉ 1' },
+            { value: 'Quevedo', text: 'QUEVEDO' },
+            { value: 'El Empalme', text: 'EL EMPALME' },
+            { value: 'Portoviejo', text: 'PORTOVIEJO' },
+            { value: 'Machala', text: 'MACHALA' },
+            { value: 'Huaquillas', text: 'HUAQUILLAS' },
+            { value: 'Santa Elena', text: 'SANTA ELENA' },
+            { value: 'Tulcán', text: 'TULCÁN' },
+            { value: 'Ibarra', text: 'IBARRA' },
+            { value: 'Cayambe', text: 'CAYAMBE' },
+            { value: 'Latacunga', text: 'LATACUNGA' },
+            { value: 'La Maná', text: 'LA MANÁ' },
+            { value: 'Caluma', text: 'CALUMA' },
+            { value: 'Cuenca', text: 'CUENCA' },
+            { value: 'Azogues', text: 'AZOGUES' },
+            { value: 'Calderón', text: 'CALDERÓN' },
+            { value: 'Quito Norte', text: 'QUITO NORTE' },
+            { value: 'Quito Centro', text: 'QUITO CENTRO' },
+            { value: 'Quito Sur', text: 'QUITO SUR' },
+            { value: 'Sangolquí', text: 'SANGOLQUÍ' },
+            { value: 'Ambato', text: 'AMBATO' },
+            { value: 'Riobamba', text: 'RIOBAMBA' },
+            { value: 'Guaranda', text: 'GUARANDA' },
+            { value: 'Loja', text: 'LOJA' }
+        ]
+    };
 
     const tipoAsistenteSelect = $('#tipo_asistente_select');
     const campoSede = $('#campo-sede');
@@ -168,34 +215,41 @@ $(document).ready(function() {
     const camposInstituto = $('#campos-instituto');
     const camposCapacitadora = $('#campos-capacitadora');
 
-    // El evento principal que controla qué campos se muestran
+    // El evento principal que controla todo el flujo del formulario
     tipoAsistenteSelect.on('change', function() {
         const seleccion = $(this).val();
 
-        // Ocultar y deshabilitar todos los campos dependientes por defecto
+        // 1. Ocultar y deshabilitar todos los campos dependientes por defecto
         campoSede.slideUp();
-        sedeSelect.prop('required', false);
+        sedeSelect.prop('required', false).empty(); // Vaciar las opciones de sede
 
         camposInstituto.slideUp();
         camposInstituto.find('select').prop('disabled', true);
 
         camposCapacitadora.slideUp();
         camposCapacitadora.find('select').prop('disabled', true);
-
-        // Mostrar campos según la selección
-        if (seleccion === 'Instituto') {
+        
+        // 2. Llenar sedes y mostrar los campos correctos según la selección
+        if (seleccion === 'Instituto' || seleccion === 'Capacitadora') {
+            
+            // Llenar el dropdown de sedes con las opciones correctas
+            sedeSelect.append('<option value="" disabled selected>-- Elige una sede --</option>');
+            sedes[seleccion].forEach(sede => {
+                sedeSelect.append(`<option value="${sede.value}">${sede.text}</option>`);
+            });
+            
+            // Mostrar el campo de sede y hacerlo requerido
             campoSede.slideDown();
             sedeSelect.prop('required', true);
 
-            camposInstituto.slideDown();
-            camposInstituto.find('select').prop('disabled', false);
-
-        } else if (seleccion === 'Capacitadora') {
-            campoSede.slideDown();
-            sedeSelect.prop('required', true);
-
-            camposCapacitadora.slideDown();
-            camposCapacitadora.find('select').prop('disabled', false);
+            // Mostrar el bloque de campos correspondiente (Instituto o Capacitadora)
+            if (seleccion === 'Instituto') {
+                camposInstituto.slideDown();
+                camposInstituto.find('select').prop('disabled', false);
+            } else { // Si es Capacitadora
+                camposCapacitadora.slideDown();
+                camposCapacitadora.find('select').prop('disabled', false);
+            }
 
         }
         // Si es "Externo", no se hace nada y todo permanece oculto.
