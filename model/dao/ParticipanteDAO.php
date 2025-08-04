@@ -52,7 +52,7 @@ class ParticipanteDAO {
     /**
      * Crea un nuevo registro de participante y descuenta un cupo, todo dentro de una transacción.
      */
-    public function crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $id_tipo_entrada, $numero_transaccion, $banco, $ruta_comprobante) {
+    public function crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $sede, $id_tipo_entrada, $numero_transaccion, $banco, $ruta_comprobante) {
         
         // La conexión ya está disponible en $this->conn, no necesitamos una nueva instancia de DAO aquí.
         // El decremento de cupo se manejará directamente.
@@ -71,8 +71,8 @@ class ParticipanteDAO {
             }
 
             // 2. Si el decremento fue exitoso, insertamos el nuevo participante
-            $query = "INSERT INTO participantes (nombres, apellidos, cedula, email, telefono, id_tipo_entrada, numero_transaccion, banco, ruta_comprobante) 
-                      VALUES (:nombres, :apellidos, :cedula, :email, :telefono, :id_tipo_entrada, :numero_transaccion, :banco, :ruta_comprobante)";
+            $query = "INSERT INTO participantes (nombres, apellidos, cedula, email, telefono, sede, id_tipo_entrada, numero_transaccion, banco, ruta_comprobante) 
+                      VALUES (:nombres, :apellidos, :cedula, :email, :telefono, :sede, :id_tipo_entrada, :numero_transaccion, :banco, :ruta_comprobante)";
             
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':nombres', $nombres);
@@ -80,14 +80,15 @@ class ParticipanteDAO {
             $stmt->bindParam(':cedula', $cedula);
             $stmt->bindParam(':email', $email);
             $stmt->bindParam(':telefono', $telefono);
+            $stmt->bindParam(':sede', $sede); // <-- AÑADIDO
             $stmt->bindParam(':id_tipo_entrada', $id_tipo_entrada, PDO::PARAM_INT);
             $stmt->bindParam(':numero_transaccion', $numero_transaccion);
-            $stmt->bindParam(':banco', $banco); // <-- ¡PARÁMETRO AÑADIDO!
+            $stmt->bindParam(':banco', $banco);
             $stmt->bindParam(':ruta_comprobante', $ruta_comprobante);
             $stmt->execute();
-            $ultimoId = $this->conn->lastInsertId(); // Obtenemos el ID del registro recién insertado
+            $ultimoId = $this->conn->lastInsertId();
             $this->conn->commit();
-            return $ultimoId; // Devolvemos el ID
+            return $ultimoId;
         } catch (Exception $e) {
             $this->conn->rollBack();
             throw $e;

@@ -52,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cedula = trim($_POST['cedula'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
+    $sede = trim($_POST['sede'] ?? '');
     $id_tipo_entrada = $_POST['id_tipo_entrada'] ?? null;
     $numero_transaccion = trim($_POST['numero_transaccion'] ?? '');
     $banco = $_POST['banco'] ?? 'Otro';
@@ -87,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($cedula) || !validarCedula($cedula)) $errors[] = 'La cédula ingresada no es válida.';
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'El formato del correo es inválido.';
     if (empty($telefono) || !preg_match('/^09\d{8}$/', $telefono)) $errors[] = 'El teléfono es inválido.';
+    if (empty($sede)) $errors[] = 'Debe seleccionar una sede.';
     if (empty($id_tipo_entrada)) $errors[] = 'Debe seleccionar un tipo de entrada.';
 
     if (!$esGratuito) {
@@ -126,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Guardamos al participante y obtenemos su nuevo ID
-            $nuevoId = $participanteDAO->crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $id_tipo_entrada, $numero_transaccion, $banco, $ruta_para_bd);
+            $nuevoId = $participanteDAO->crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $sede, $id_tipo_entrada, $numero_transaccion, $banco, $ruta_para_bd);
             
             if ($nuevoId) {
                 // Si el registro es exitoso, devolvemos el status y el ID del nuevo participante

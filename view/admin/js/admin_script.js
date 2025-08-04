@@ -163,16 +163,37 @@ $(document).ready(function() {
     if ($('#tabla-categorias-body').length) $.get(basePath + 'CategoriaControlador.php', response => renderizarTablaCategorias(response.data), 'json');
     if ($('#tabla-lugares-body').length) $.get(basePath + 'LugarControlador.php', response => renderizarTablaLugares(response.data), 'json');
     if ($('#tabla-eventos-body').length) $.get(basePath + 'EventoControlador.php', response => renderizarTablaEventos(response.data), 'json');
+    if ($('#tabla-usuarios-body').length) $.get(basePath + 'UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
 
-    // --- FORMULARIOS SIN ARCHIVOS ---
+    // --- FORMULARIOS SIN ARCHIVOS (Categoría y Lugar) ---
     $('#form-categoria, #form-lugar').on('submit', function(e) {
         e.preventDefault();
         const form = $(this);
-        let redirectUrl = form.is('#form-categoria') ? 'index.php' : 'lugares.php';
+        let redirectUrl = form.is('#form-categoria') ? 'categorias.php' : 'lugares.php';
         $.ajax({
             url: form.attr('action'),
             type: 'POST', data: form.serialize(), dataType: 'json',
             success: r => { if(r.status==='success'){ alert(r.message); window.location.href=redirectUrl; } else { alert('Error: '+r.message); }},
+            error: () => alert('Error de comunicación.')
+        });
+    });
+
+    // --- ¡¡CÓDIGO AÑADIDO PARA EL FORMULARIO DE USUARIO!! ---
+    $('#form-usuario').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: $(this).serialize(),
+            dataType: 'json',
+            success: r => {
+                if (r.status === 'success') {
+                    alert(r.message);
+                    window.location.href = 'usuarios.php';
+                } else {
+                    alert('Error: ' + r.message);
+                }
+            },
             error: () => alert('Error de comunicación.')
         });
     });

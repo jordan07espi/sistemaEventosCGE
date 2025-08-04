@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../model/dao/UsuarioDAO.php';
-header('Content-Type: application/json');
+header('Content-Type: application/json'); 
 $usuarioDAO = new UsuarioDAO();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         $response['message'] = $e->getMessage();
     }
-    echo json_encode($response);
+    echo json_encode($response, JSON_UNESCAPED_UNICODE); 
     exit();
 }
 ?>

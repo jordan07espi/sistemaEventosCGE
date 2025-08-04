@@ -122,6 +122,15 @@ include 'partials/header.php';
                         <input type="tel" id="telefono" name="telefono" class="form-control" required maxlength="10">
                         <div class="form-text text-danger" id="telefono-error"></div>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Sede</label>
+                        <select name="sede" class="form-select" required>
+                            <option value="" disabled selected>-- Elige una sede --</option>
+                            <option value="Santo Domingo">Santo Domingo</option>
+                            <option value="Quininde">Quinindé</option>
+                            </select>
+                    </div>
                     
                     <hr>
                     
