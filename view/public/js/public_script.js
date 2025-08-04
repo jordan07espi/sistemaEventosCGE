@@ -22,16 +22,20 @@ $(document).ready(function() {
         return resultado === digitoVerificador;
     }
 
-    // Nombres y Apellidos
-    nombresInput.on('input', function() {
-        let valor = $(this).val();
-        $(this).val(valor.toUpperCase()); // Convertir a mayúsculas
-        if (/\d/.test(valor)) {
-            $('#nombres-error').text('Este campo no puede contener números.');
-        } else {
-            $('#nombres-error').text('');
+    // Nombres y Apellidos (VALIDACIÓN MEJORADA CON Ñ Y TILDES)
+    function validarTexto(input, errorField) {
+        let valor = input.val();
+        // Permite letras, tildes, Ñ, y espacios. Reemplaza cualquier otra cosa.
+        let valorLimpio = valor.toUpperCase().replace(/[^A-ZÁÉÍÓÚÑ\s]/g, '');
+        if (valor !== valorLimpio) {
+            input.val(valorLimpio);
         }
-        if (valor.trim().split(' ').length === 1 && valor.length > 2) {
+    }
+
+    nombresInput.on('input', function() {
+        validarTexto($(this), $('#nombres-error'));
+        // La lógica de la sugerencia se mantiene igual
+        if ($(this).val().trim().split(' ').length === 1 && $(this).val().length > 2) {
             $('#nombres-sugerencia').text('Sugerencia: si tiene dos nombres, por favor ingréselos.');
         } else {
             $('#nombres-sugerencia').text('');
@@ -39,14 +43,9 @@ $(document).ready(function() {
     });
 
     apellidosInput.on('input', function() {
-        let valor = $(this).val();
-        $(this).val(valor.toUpperCase());
-        if (/\d/.test(valor)) {
-            $('#apellidos-error').text('Este campo no puede contener números.');
-        } else {
-            $('#apellidos-error').text('');
-        }
-        if (valor.trim().split(' ').length === 1 && valor.length > 2) {
+        validarTexto($(this), $('#apellidos-error'));
+        // La lógica de la sugerencia se mantiene igual
+        if ($(this).val().trim().split(' ').length === 1 && $(this).val().length > 2) {
             $('#apellidos-sugerencia').text('Sugerencia: ingrese sus dos apellidos si los tiene.');
         } else {
             $('#apellidos-sugerencia').text('');

@@ -93,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // --- Reglas de Validación del Servidor ---
-    if (empty($nombres) || !preg_match('/^[A-Z\s]+$/i', $nombres)) $errors[] = 'El campo Nombres es inválido.';
-    if (empty($apellidos) || !preg_match('/^[A-Z\s]+$/i', $apellidos)) $errors[] = 'El campo Apellidos es inválido.';
+    if (empty($nombres) || !preg_match('/^[A-ZÁÉÍÓÚÑ\s]+$/iu', $nombres)) $errors[] = 'El campo Nombres es inválido (solo letras y espacios).';
+    if (empty($apellidos) || !preg_match('/^[A-ZÁÉÍÓÚÑ\s]+$/iu', $apellidos)) $errors[] = 'El campo Apellidos es inválido (solo letras y espacios).';
     if (empty($cedula) || !validarCedula($cedula)) $errors[] = 'La cédula ingresada no es válida.';
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'El formato del correo es inválido.';
     if (empty($telefono) || !preg_match('/^09\d{8}$/', $telefono)) $errors[] = 'El teléfono es inválido.';
