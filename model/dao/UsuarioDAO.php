@@ -5,9 +5,12 @@ class UsuarioDAO {
     private $conn;
     public function __construct() { $this->conn = (new Conexion())->getConnection(); }
 
-    // Cambiado para buscar por cédula en lugar de email
     public function getUsuarioPorCedula($cedula) {
-        $query = "SELECT u.*, r.nombre as nombre_rol FROM usuarios u JOIN roles_usuario r ON u.id_rol = r.id WHERE u.cedula = :cedula";
+        // --- CAMBIO AQUÍ: Eliminamos 'email' de la consulta ---
+        $query = "SELECT u.id, u.contrasena, u.id_rol, u.nombres, u.apellidos, u.cedula, r.nombre as nombre_rol 
+                  FROM usuarios u 
+                  JOIN roles_usuario r ON u.id_rol = r.id 
+                  WHERE u.cedula = :cedula";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':cedula', $cedula);
         $stmt->execute();
@@ -15,7 +18,8 @@ class UsuarioDAO {
     }
 
     public function getUsuarios() {
-        $query = "SELECT u.id, u.nombres, u.apellidos, u.cedula, u.email, r.nombre as nombre_rol 
+        // --- CAMBIO AQUÍ: Eliminamos 'email' de la consulta ---
+        $query = "SELECT u.id, u.nombres, u.apellidos, u.cedula, r.nombre as nombre_rol 
                   FROM usuarios u 
                   JOIN roles_usuario r ON u.id_rol = r.id 
                   ORDER BY u.apellidos, u.nombres";
@@ -25,7 +29,7 @@ class UsuarioDAO {
     }
 
     public function getUsuarioPorId($id) {
-        $query = "SELECT id, nombres, apellidos, cedula, email, id_rol FROM usuarios WHERE id = :id";
+        $query = "SELECT id, nombres, apellidos, cedula, id_rol FROM usuarios WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
@@ -41,17 +45,17 @@ class UsuarioDAO {
         return $stmt->fetchColumn() > 0;
     }
 
-    public function crearUsuario($nombres, $apellidos, $cedula, $email, $id_rol, $contrasena) {
+    public function crearUsuario($nombres, $apellidos, $cedula, $id_rol, $contrasena) {
         $hash = password_hash($contrasena, PASSWORD_DEFAULT);
-        $query = "INSERT INTO usuarios (nombres, apellidos, cedula, email, id_rol, contrasena) VALUES (?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO usuarios (nombres, apellidos, cedula, id_rol, contrasena) VALUES (?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($query);
-        return $stmt->execute([$nombres, $apellidos, $cedula, $email, $id_rol, $hash]);
+        return $stmt->execute([$nombres, $apellidos, $cedula, $id_rol, $hash]);
     }
 
-    public function actualizarUsuario($id, $nombres, $apellidos, $cedula, $email, $id_rol) {
-        $query = "UPDATE usuarios SET nombres = ?, apellidos = ?, cedula = ?, email = ?, id_rol = ? WHERE id = ?";
+    public function actualizarUsuario($id, $nombres, $apellidos, $cedula, $id_rol) {
+        $query = "UPDATE usuarios SET nombres = ?, apellidos = ?, cedula = ?, id_rol = ? WHERE id = ?";
         $stmt = $this->conn->prepare($query);
-        return $stmt->execute([$nombres, $apellidos, $cedula, $email, $id_rol, $id]);
+        return $stmt->execute([$nombres, $apellidos, $cedula, $id_rol, $id]);
     }
 
     public function actualizarContrasena($id, $nueva_contrasena) {

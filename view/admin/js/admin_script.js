@@ -140,7 +140,6 @@ function renderizarTablaUsuarios(usuarios) {
             <tr>
                 <td>${user.nombres} ${user.apellidos}</td>
                 <td>${user.cedula}</td>
-                <td>${user.email}</td>
                 <td><span class="badge bg-secondary">${user.nombre_rol}</span></td>
                 <td>
                     <a href="form_usuario.php?id=${user.id}" class="btn btn-warning btn-sm">Editar</a>
@@ -512,58 +511,93 @@ $(document).ready(function() {
         });
     }
 
-
-
-
-
-    // --- DENTRO DE $(document).ready(function() { ... }); ---
+    // --- LÓGICA PARA GESTIÓN DE USUARIOS ---
     if ($('#tabla-usuarios-body').length) {
+        // Carga inicial de usuarios
         $.get('../../controller/UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
+
+        // Envío del formulario de creación/edición
+        $('#form-usuario').on('submit', function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                dataType: 'json',
+                success: r => {
+                    if (r.status === 'success') {
+                        alert(r.message);
+                        window.location.href = 'usuarios.php';
+                    } else {
+                        alert('Error: ' + r.message);
+                    }
+                },
+                error: () => alert('Error de comunicación.')
+            });
+        });
+
+        // Abrir el modal para resetear contraseña
+        $('#tabla-usuarios-body').on('click', '.btn-reset-pass', function() {
+            const id = $(this).data('id');
+            const nombre = $(this).data('nombre');
+            $('#reset-id-usuario').val(id);
+            $('#nombre-usuario-reset').text(nombre);
+        });
+
+        // --- ¡BLOQUE CORREGIDO! ---
+        // Variable para guardar el mensaje de éxito temporalmente
+        let resetSuccessMessage = '';
+
+        // Envío del formulario del modal de reseteo
+        $('#form-reset-pass').on('submit', function(e) {
+            e.preventDefault();
+            const form = $(this);
+            $.ajax({
+                url: '../../controller/UsuarioControlador.php',
+                type: 'POST',
+                data: form.serialize(),
+                dataType: 'json',
+                success: r => {
+                    if (r.status === 'success') {
+                        // 1. Guardamos el mensaje de éxito en nuestra variable.
+                        resetSuccessMessage = r.message;
+                        // 2. Limpiamos y le decimos al modal que se oculte. NO mostramos el alert aquí.
+                        form[0].reset();
+                        $('#resetPasswordModal').modal('hide');
+                    } else {
+                        alert('Error: ' + r.message);
+                    }
+                },
+                error: () => alert('Error de comunicación.')
+            });
+        });
+
+        // Evento que se dispara DESPUÉS de que el modal se haya ocultado completamente
+        $('#resetPasswordModal').on('hidden.bs.modal', function() {
+            // 3. Si tenemos un mensaje de éxito guardado, lo mostramos ahora que la pantalla está limpia.
+            if (resetSuccessMessage) {
+                alert(resetSuccessMessage);
+                resetSuccessMessage = ''; // Limpiamos la variable para el próximo uso.
+            }
+        });
+        // --- FIN DEL BLOQUE CORREGIDO ---
+
+        // Eliminar usuario
+        $('#tabla-usuarios-body').on('click', '.btn-eliminar-usuario', function() {
+            if (!confirm('¿Seguro que quieres eliminar a este usuario?')) return;
+            const id = $(this).data('id');
+            $.post('../../controller/UsuarioControlador.php', {
+                accion: 'eliminar',
+                id_usuario: id
+            }, r => {
+                if (r.status === 'success') {
+                    // Recargamos la tabla para reflejar el cambio
+                    $.get('../../controller/UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
+                } else {
+                    alert('Error: ' + r.message);
+                }
+            }, 'json');
+        });
     }
-
-    $('#form-usuario').on('submit', function(e) {
-        e.preventDefault();
-        $.ajax({
-            url: $(this).attr('action'), type: 'POST', data: $(this).serialize(), dataType: 'json',
-            success: r => {
-                if(r.status==='success'){ alert(r.message); window.location.href='usuarios.php'; } 
-                else { alert('Error: '+r.message); }
-            },
-            error: () => alert('Error de comunicación.')
-        });
-    });
-
-    $('#tabla-usuarios-body').on('click', '.btn-reset-pass', function() {
-        const id = $(this).data('id');
-        const nombre = $(this).data('nombre');
-        $('#reset-id-usuario').val(id);
-        $('#nombre-usuario-reset').text(nombre);
-    });
-
-    // Envío del formulario del modal
-    $('#form-reset-pass').on('submit', function(e) {
-        e.preventDefault();
-        $.ajax({
-            url: '../../controller/UsuarioControlador.php', type: 'POST', data: $(this).serialize(), dataType: 'json',
-            success: r => {
-                if(r.status==='success'){
-                    alert(r.message);
-                    $('#resetPasswordModal').modal('hide');
-                    $(this)[0].reset();
-                } else { alert('Error: '+r.message); }
-            },
-            error: () => alert('Error de comunicación.')
-        });
-    });
-
-    $('#tabla-usuarios-body').on('click', '.btn-eliminar-usuario', function() {
-        if (!confirm('¿Seguro que quieres eliminar a este usuario?')) return;
-        const id = $(this).data('id');
-        $.post('../../controller/UsuarioControlador.php', { accion: 'eliminar', id_usuario: id }, r => {
-            if(r.status === 'success') {
-                $.get('../../controller/UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
-            } else { alert('Error: ' + r.message); }
-        }, 'json');
-    });
 
 });

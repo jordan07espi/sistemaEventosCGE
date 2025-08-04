@@ -1,9 +1,23 @@
 <div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Gestión de Usuarios</h2>
+        <a href="form_usuario.php" class="btn btn-primary">Crear Nuevo Usuario</a>
+    </div>
+    <hr>
     <div class="card">
         <div class="card-body">
             <table class="table table-striped table-hover">
-                <thead><tr><th>Nombre Completo</th><th>Cédula</th><th>Email</th><th>Rol</th><th>Acciones</th></tr></thead>
-                <tbody id="tabla-usuarios-body"></tbody>
+                <thead>
+                    <tr>
+                        <th>Nombre Completo</th>
+                        <th>Cédula</th>
+                        <th>Rol</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-usuarios-body">
+                    <tr><td colspan="4" class="text-center">Cargando usuarios...</td></tr>
+                </tbody>
             </table>
         </div>
     </div>
