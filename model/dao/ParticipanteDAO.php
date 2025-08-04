@@ -52,7 +52,7 @@ class ParticipanteDAO {
     /**
      * Crea un nuevo registro de participante y descuenta un cupo, todo dentro de una transacción.
      */
-    public function crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $sede, $id_tipo_entrada, $numero_transaccion, $banco, $ruta_comprobante) {
+    public function crearParticipante($nombres, $apellidos, $cedula, $email, $telefono, $sede, $tipo_asistente, $carrera_curso, $nivel,$id_tipo_entrada, $numero_transaccion, $banco, $ruta_comprobante) {
         
         // La conexión ya está disponible en $this->conn, no necesitamos una nueva instancia de DAO aquí.
         // El decremento de cupo se manejará directamente.
@@ -71,8 +71,8 @@ class ParticipanteDAO {
             }
 
             // 2. Si el decremento fue exitoso, insertamos el nuevo participante
-            $query = "INSERT INTO participantes (nombres, apellidos, cedula, email, telefono, sede, id_tipo_entrada, numero_transaccion, banco, ruta_comprobante) 
-                      VALUES (:nombres, :apellidos, :cedula, :email, :telefono, :sede, :id_tipo_entrada, :numero_transaccion, :banco, :ruta_comprobante)";
+            $query = "INSERT INTO participantes (nombres, apellidos, cedula, email, telefono, sede, tipo_asistente, carrera_curso, nivel, id_tipo_entrada, numero_transaccion, banco, ruta_comprobante) 
+                      VALUES (:nombres, :apellidos, :cedula, :email, :telefono, :sede, :tipo_asistente, :carrera_curso, :nivel, :id_tipo_entrada, :numero_transaccion, :banco, :ruta_comprobante)";
             
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':nombres', $nombres);
@@ -80,7 +80,10 @@ class ParticipanteDAO {
             $stmt->bindParam(':cedula', $cedula);
             $stmt->bindParam(':email', $email);
             $stmt->bindParam(':telefono', $telefono);
-            $stmt->bindParam(':sede', $sede); // <-- AÑADIDO
+            $stmt->bindParam(':sede', $sede);
+            $stmt->bindParam(':tipo_asistente', $tipo_asistente); // <-- AÑADIDO
+            $stmt->bindParam(':carrera_curso', $carrera_curso); // <-- AÑADIDO
+            $stmt->bindParam(':nivel', $nivel);                 // <-- AÑADIDO
             $stmt->bindParam(':id_tipo_entrada', $id_tipo_entrada, PDO::PARAM_INT);
             $stmt->bindParam(':numero_transaccion', $numero_transaccion);
             $stmt->bindParam(':banco', $banco);

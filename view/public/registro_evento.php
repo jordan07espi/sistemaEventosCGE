@@ -117,19 +117,92 @@ include 'partials/header.php';
                         <label class="form-label">Correo Electrónico</label>
                         <input type="email" name="email" class="form-control" required>
                     </div>
-                    <div class="mb-3">
+<div class="mb-3">
                         <label class="form-label">Teléfono</label>
                         <input type="tel" id="telefono" name="telefono" class="form-control" required maxlength="10">
                         <div class="form-text text-danger" id="telefono-error"></div>
                     </div>
 
                     <div class="mb-3">
+                        <label class="form-label">¿Perteneces a?</label>
+                        <select name="tipo_asistente" id="tipo_asistente_select" class="form-select" required>
+                            <option value="" disabled selected>-- Elige una opción --</option>
+                            <option value="Instituto">Instituto CGE</option>
+                            <option value="Capacitadora">Capacitadora CGE</option>
+                            <option value="Externo">Público General / Externo</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="campo-sede" style="display:none;">
                         <label class="form-label">Sede</label>
-                        <select name="sede" class="form-select" required>
+                        <select name="sede" id="sede_select" class="form-select">
                             <option value="" disabled selected>-- Elige una sede --</option>
-                            <option value="Santo Domingo">Santo Domingo</option>
-                            <option value="Quininde">Quinindé</option>
+                            <option value="Santo Domingo">SANTO DOMINGO</option>
+                            <option value="Quininde">QUININDÉ</option>
+                        </select>
+                    </div>
+
+                    <div id="campos-instituto" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">Carrera del Instituto</label>
+                            <select name="carrera_curso_instituto" id="carrera_select" class="form-select">
+                                <option value="" disabled selected>-- Elige una carrera --</option>
+                                <option value="Enfermeria">ENFERMERIA</option>
+                                <option value="Emergencias Medicas">EMERGENCIAS MEDICAS</option>
+                                <option value="REHABILITACION FISICA">REHABILITACION FISICA</option>
+                                <option value="ADMINISTRACION DE SISTEMAS DE LA SALUD">ADMINISTRACION DE SISTEMAS DE LA SALUD</option>
+                                <option value="EDUCACION INICIAL">EDUCACION INICIAL</option>
+                                <option value="ADMINISTRACION DE EMPRESAS - ONLINE">ADMINISTRACION DE EMPRESAS - ONLINE</option>
+                                <option value="ADMINISTRACIÓN DE FARMACIAS">ADMINISTRACIÓN DE FARMACIAS</option>
+                                <option value="MARKETING DIGITAL Y COMERCIO ELECTRONICO">MARKETING DIGITAL Y COMERCIO ELECTRONICO</option>
+                                <option value="NATUROPATIA">NATUROPATIA</option>
+                                <option value="GASTRONOMIA">GASTRONOMIA</option>
+                                <option value="MECANICA AUTOMOTRIZ">MECANICA AUTOMOTRIZ</option>
+                                
                             </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nivel</label>
+                            <select name="nivel_instituto" id="nivel_instituto_select" class="form-select">
+                                <option value="" disabled selected>-- Elige un Nivel --</option>
+                                <option value="PRIMERO">PRIMERO</option>
+                                <option value="SEGUNDO">SEGUNDO</option>
+                                <option value="TERCERO">TERCERO</option>
+                                <option value="CUARTO">CUARTO</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="campos-capacitadora" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">Curso de Capacitación</label>
+                            <select name="carrera_curso_capacitadora" id="curso_select" class="form-select">
+                                <option value="" disabled selected>-- ELIGE UN CURSO --</option>
+                                <option value="AUXILIAR DE ENFERMERIA">AUXILIAR DE ENFERMERIA</option>
+                                <option value="AUXILIAR DE FARMACIA">AUXILIAR DE FARMACIA</option>
+                                <option value="AUXILIAR DE PARVULOS">AUXILIAR DE PARVULOS</option>
+                                <option value="AUXILIAR DE LABORATORIO">AUXILIAR DE LABORATORIO</option>
+                                <option value="AUXILIAR EN EMERGENCIAS MEDICAS">AUXILIAR EN EMERGENCIAS MEDICAS</option>
+                                <option value="AUXILIAR DE ODONTOLOGIA">AUXILIAR DE ODONTOLOGIA</option>
+                                <option value="AUXILIAR DE RIESGOS Y DESASTRES">AUXILIAR DE RIESGOS Y DESASTRES</option>
+                                <option value="AUXILIAR EN IMAGENOLOGIA MEDICA">AUXILIAR EN IMAGENOLOGIA MEDICA</option>
+                                <option value="AUXILIAR DE NUTRICION">AUXILIAR DE NUTRICION</option>
+                                <option value="AUXILIAR DE NATUROPATIA">AUXILIAR DE NATUROPATIA</option>
+                                <option value="AUXILIAR DE VETERINARIA">AUXILIAR DE VETERINARIA</option>
+                                <option value="AUXILIAR EN GERIATRIA">AUXILIAR EN GERIATRIA</option>
+                                <option value="AUXILIAR EN CUIDADOS INTENSIVOS">AUXILIAR EN CUIDADOS INTENSIVOS</option>
+                                <option value="REHABILITACION FISICA">REHABILITACION FISICA</option>
+                                <option value="ULISES">ULISES</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nivel</label>
+                            <select name="nivel_capacitadora" id="nivel_capacitadora_select" class="form-select">
+                                <?php for ($i = 1; $i <= 10; $i++): ?>
+                                    <option value="Nivel <?php echo $i; ?>">Nivel <?php echo $i; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
                     </div>
                     
                     <hr>

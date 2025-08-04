@@ -158,4 +158,46 @@ $(document).ready(function() {
             }
         });
     });
+
+
+    // --- LÓGICA PARA NUEVOS CAMPOS DINÁMICOS ---
+
+    const tipoAsistenteSelect = $('#tipo_asistente_select');
+    const campoSede = $('#campo-sede');
+    const sedeSelect = $('#sede_select');
+    const camposInstituto = $('#campos-instituto');
+    const camposCapacitadora = $('#campos-capacitadora');
+
+    // El evento principal que controla qué campos se muestran
+    tipoAsistenteSelect.on('change', function() {
+        const seleccion = $(this).val();
+
+        // Ocultar y deshabilitar todos los campos dependientes por defecto
+        campoSede.slideUp();
+        sedeSelect.prop('required', false);
+
+        camposInstituto.slideUp();
+        camposInstituto.find('select').prop('disabled', true);
+
+        camposCapacitadora.slideUp();
+        camposCapacitadora.find('select').prop('disabled', true);
+
+        // Mostrar campos según la selección
+        if (seleccion === 'Instituto') {
+            campoSede.slideDown();
+            sedeSelect.prop('required', true);
+
+            camposInstituto.slideDown();
+            camposInstituto.find('select').prop('disabled', false);
+
+        } else if (seleccion === 'Capacitadora') {
+            campoSede.slideDown();
+            sedeSelect.prop('required', true);
+
+            camposCapacitadora.slideDown();
+            camposCapacitadora.find('select').prop('disabled', false);
+
+        }
+        // Si es "Externo", no se hace nada y todo permanece oculto.
+    });
 });

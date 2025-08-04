@@ -1,3 +1,10 @@
+<?php 
+require_once __DIR__ . '/../../controller/seguridad.php'; 
+if ($_SESSION['user_role'] !== 'Admin') {
+    die("Acceso denegado.");
+}
+?>
+
 <?php
 // Incluimos todos los DAOs que vamos a necesitar en esta página
 require_once __DIR__ . '/../../model/dao/EventoDAO.php';
