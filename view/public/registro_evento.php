@@ -27,6 +27,16 @@ $calendarios = $calendarioDAO->getCalendariosPorEventoId($id_evento);
 $tipoEntradaDAO = new TipoEntradaDAO();
 
 
+// --- LÓGICA PARA OBTENER LA FECHA DEL EVENTO PARA EL CONTADOR ---
+$fechaTimestamp = 0;
+if (!empty($calendarios)) {
+    // Tomamos la fecha de la primera función del evento
+    $primeraFuncion = $calendarios[0];
+    // Combinamos fecha y hora y la convertimos a un timestamp de Unix
+    $fechaTimestamp = strtotime($primeraFuncion['fecha'] . ' ' . $primeraFuncion['hora']);
+}
+
+
 include 'partials/header.php';
 ?>
 
@@ -39,14 +49,18 @@ include 'partials/header.php';
                 <p class="lead text-muted"><?php echo nl2br(htmlspecialchars($evento['descripcion'])); ?></p>
                 <hr>
                 
+                <h4>El evento comienza en:</h4>
+                <div id="flipdown" class="flipdown mb-3 "></div>
+                <hr>
+
                 <h4>Cupos Disponibles</h4>
                 <ul class="list-unstyled">
                     <?php 
-                    $hayCupos = false;
+                    $hayCuposDefinidos = false;
                     foreach($calendarios as $cal): 
                         $tipos = $tipoEntradaDAO->getTiposEntradaPorCalendarioId($cal['id']);
+                        if (!empty($tipos)) $hayCuposDefinidos = true;
                         foreach($tipos as $tipo):
-                            $hayCupos = true;
                     ?>
                         <li>
                             <strong><?php echo htmlspecialchars($tipo['nombre']); ?>:</strong>
@@ -55,16 +69,16 @@ include 'partials/header.php';
                     <?php 
                         endforeach; 
                     endforeach; 
-                    if (!$hayCupos) {
-                        echo "<p>No hay tipos de entrada definidos para este evento.</p>";
+                    if (!$hayCuposDefinidos) {
+                        echo "<p class='text-muted'>No hay tipos de entrada definidos para este evento.</p>";
                     }
                     ?>
                 </ul>
                 <hr>
 
-                <h4>Funciones Disponibles</h4>
+                <h4>Funciones</h4>
                 <?php if(empty($calendarios)): ?>
-                    <p>No hay fechas programadas para este evento todavía.</p>
+                    <p class="text-muted">No hay fechas programadas para este evento todavía.</p>
                 <?php else: ?>
                     <?php foreach($calendarios as $cal): ?>
                         <div class="mb-2">
@@ -260,6 +274,9 @@ include 'partials/header.php';
     </div>
 </div>
 
+<script>
+    var unixTimestamp = <?php echo $fechaTimestamp; ?>;
+</script>
 <?php
 include 'partials/footer.php';
 ?>

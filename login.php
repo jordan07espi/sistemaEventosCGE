@@ -13,7 +13,7 @@
 <body>
     <div class="card login-card shadow-sm">
         <div class="card-body">
-            <h3 class="card-title text-center mb-4">Acceso al Panel</h3>
+            <h3 class="card-title text-center mb-4">EvaSoft</h3>
             <?php if (isset($_SESSION['login_error'])): ?>
                 <div class="alert alert-danger"><?php echo $_SESSION['login_error']; unset($_SESSION['login_error']); ?></div>
             <?php endif; ?>

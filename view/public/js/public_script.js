@@ -1,5 +1,22 @@
 $(document).ready(function() {
-    
+
+    // --- LÓGICA PARA EL CONTADOR REGRESIVO (FLIPDOWN) ---
+    // Verificamos si el div del contador existe en la página
+    if ($('#flipdown').length) {
+        // Verificamos que tengamos un timestamp válido desde PHP
+        if (typeof unixTimestamp !== 'undefined' && unixTimestamp > 0) {
+            
+            // Inicializamos FlipDown con nuestro timestamp
+            new FlipDown(unixTimestamp, 'flipdown', {
+                theme: "dark", // Mantenemos el tema base para sobreescribir los estilos
+                headings: ["Días", "Horas", "Minutos", "Segundos"] // <-- AÑADIDO: Etiquetas en español
+            }).start();
+
+        } else {
+            $('#flipdown').html('<p class="text-muted">La fecha del evento no está definida.</p>');
+        }
+    }
+
     // --- VALIDACIÓN EN TIEMPO REAL ---
     const nombresInput = $('#nombres');
     const apellidosInput = $('#apellidos');
