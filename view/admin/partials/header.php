@@ -39,7 +39,7 @@
                             <li class="nav-item"><a class="nav-link" href="categorias.php">Categorías</a></li>
                             <li class="nav-item"><a class="nav-link" href="eventos.php">Eventos</a></li>
                             <li class="nav-item"><a class="nav-link" href="lugares.php">Lugares</a></li>
-                            <li class="nav-item"><a class="nav-link" href="usuarios.php">Usuarios</a></li>
+                            <li class="nav-item"><a class="nav-link" href="becados.php">Becados</a></li> <li class="nav-item"><a class="nav-link" href="usuarios.php">Usuarios</a></li>
                             <li class="nav-item"><a class="nav-link" href="participantes.php">Participantes</a></li>
                             <li class="nav-item"><a class="nav-link" href="escanear.php">Escanear QR</a></li>
                         <?php endif; ?>

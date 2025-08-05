@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../model/dao/ParticipanteDAO.php';
 require_once __DIR__ . '/../model/dao/TipoEntradaDAO.php';
+require_once __DIR__ . '/../model/dao/BecadoDAO.php'; 
 
 // --- MANEJADOR PARA SOLICITUDES GET (PANEL DE ADMIN) ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -123,8 +124,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // --- Procesamiento ---
     if (empty($errors)) {
         try {
+            $esEntradaBeca = false;
+            // Verificamos si la entrada seleccionada es para becados (asumimos que es la que cuesta $0)
+            if ($tipoEntrada && (float)$tipoEntrada['precio'] === 0.00) {
+                $esEntradaBeca = true;
+            }
+
+            // ¡NUEVA VALIDACIÓN DE BECA!
+            if ($esEntradaBeca) {
+                $becadoDAO = new BecadoDAO();
+                if (!$becadoDAO->isBecadoValido($cedula)) {
+                    // Si no es un becado válido, lanzamos una excepción con un mensaje claro.
+                    throw new Exception("La cédula ingresada no corresponde a un estudiante con beca activa. Contactese con secretaria para más información.");
+                }
+            }
+
             $ruta_para_bd = 'N/A';
-            if (!$esGratuito) {
+            if (!$esGratuito) { // Esta lógica se mantiene igual
                 $nombre_carpeta_banco = preg_replace("/[^a-zA-Z0-9]+/", "", $banco);
                 $directorio_subida = __DIR__ . '/../uploads/comprobantes/' . $nombre_carpeta_banco . '/';
                 if (!is_dir($directorio_subida)) mkdir($directorio_subida, 0777, true);
@@ -136,18 +152,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception("Hubo un error al guardar el comprobante.");
                 }
             } else {
-                $numero_transaccion = 'GRATUITO-' . uniqid();
+                $numero_transaccion = $esEntradaBeca ? 'BECA-' . uniqid() : 'GRATUITO-' . uniqid();
                 $banco = 'N/A';
             }
 
             // Llamada al método ACTUALIZADO del DAO con los nuevos campos
             $nuevoId = $participanteDAO->crearParticipante(
                 $nombres, $apellidos, $cedula, $email, $telefono, $sede, 
-                $tipo_asistente, $carrera_curso, $nivel, // Nuevos parámetros
+                $tipo_asistente, $carrera_curso, $nivel,
                 $id_tipo_entrada, $numero_transaccion, $banco, $ruta_para_bd
             );
             
             if ($nuevoId) {
+                // ¡NUEVO! Si fue un registro de beca exitoso, incrementamos el contador
+                if ($esEntradaBeca) {
+                    $becadoDAO = new BecadoDAO(); // Re-instanciamos por si acaso
+                    $becadoDAO->incrementarAtenea($cedula);
+                }
+
                 $response = [
                     'status' => 'success', 
                     'message' => '¡Registro guardado exitosamente!',
@@ -163,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $response = ['status' => 'error', 'errors' => $errors];
     }
-    
+
     echo json_encode($response);
     exit();
 }

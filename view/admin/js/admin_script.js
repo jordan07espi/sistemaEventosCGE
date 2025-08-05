@@ -153,6 +153,47 @@ function renderizarTablaUsuarios(usuarios) {
 
 
 // =============================================================
+// ECCIÓN PARA GESTIÓN DE BECADOS!
+// =============================================================
+
+// Función para renderizar la tabla de becados
+function renderizarTablaBecados(becados) {
+    const tablaBody = $('#tabla-becados-body');
+    if (!tablaBody.length) return;
+    tablaBody.empty();
+
+    if (!becados || becados.length === 0) {
+        tablaBody.append('<tr><td colspan="5" class="text-center">No hay estudiantes becados registrados.</td></tr>');
+        return;
+    }
+
+    becados.forEach(b => {
+        const estadoBadge = b.estado === 'Activo' ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>';
+        const botonTexto = b.estado === 'Activo' ? 'Desactivar' : 'Activar';
+        const botonClase = b.estado === 'Activo' ? 'btn-warning' : 'btn-success';
+
+        // --- ESTRUCTURA DE LA FILA ACTUALIZADA ---
+        const fila = `
+            <tr>
+                <td>${b.cedula}</td>
+                <td>${b.nombres_apellidos}</td>
+                <td>${b.programa}</td>
+                <td><strong>${b.ateneas_cursadas} / 3</strong></td>
+                <td>${estadoBadge}</td>
+                <td>
+                    <button class="btn ${botonClase} btn-sm btn-cambiar-estado-becado" data-id="${b.id}" data-estado="${b.estado}">${botonTexto}</button>
+                </td>
+            </tr>
+        `;
+        tablaBody.append(fila);
+    });
+}
+
+
+
+
+
+// =============================================================
 // CÓDIGO PRINCIPAL
 // =============================================================
 $(document).ready(function() {
@@ -330,6 +371,56 @@ $(document).ready(function() {
             }
         });
     }
+
+    
+    // =============================================================
+    // --- CARGA INICIAL Y ACCIONES PARA BECADOS ---
+    // =============================================================
+    if ($('#tabla-becados-body').length) {
+        $.get(basePath + 'BecadoControlador.php', response => renderizarTablaBecados(response.data), 'json');
+    }
+
+    $('#tabla-becados-body').on('click', '.btn-cambiar-estado-becado', function() {
+        if (!confirm('¿Estás seguro de cambiar el estado de este estudiante?')) return;
+        const id = $(this).data('id');
+        const estado = $(this).data('estado');
+        $.post(basePath + 'BecadoControlador.php', { accion: 'cambiar_estado', id_becado: id, estado_actual: estado }, response => {
+            if(response.status === 'success') {
+                renderizarTablaBecados(response.data);
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }, 'json');
+    });
+
+    $('#form-importar-becados').on('submit', function(e) {
+        e.preventDefault();
+        const form = $(this);
+        const submitButton = form.find('button[type="submit"]');
+        const originalButtonText = submitButton.html();
+        submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Importando...');
+
+        $.ajax({
+            url: basePath + 'BecadoControlador.php',
+            type: 'POST',
+            data: new FormData(this),
+            dataType: 'json',
+            contentType: false,
+            processData: false,
+            success: r => {
+                if (r.status === 'success') {
+                    alert(r.message);
+                    renderizarTablaBecados(r.data);
+                    form[0].reset();
+                } else {
+                    alert('Error: ' + r.message);
+                }
+            },
+            error: () => alert('Error de comunicación.'),
+            complete: () => submitButton.prop('disabled', false).html(originalButtonText)
+        });
+    });
+
 
     // =============================================================
     // LÓGICA PARA EL MÓDULO DE ESCANEO QR (check-in)
