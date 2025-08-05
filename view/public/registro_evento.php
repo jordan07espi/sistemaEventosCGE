@@ -65,6 +65,9 @@ include 'partials/header.php';
                         <li>
                             <strong><?php echo htmlspecialchars($tipo['nombre']); ?>:</strong>
                             <span class="badge bg-primary ms-2"><?php echo $tipo['cantidad_disponible']; ?> restantes</span>
+                            <?php if (!empty($tipo['detalle'])): ?>
+                                <span class="badge bg-success ms-2"><?php echo htmlspecialchars($tipo['detalle']); ?></span>
+                            <?php endif; ?>
                         </li>
                     <?php 
                         endforeach; 
