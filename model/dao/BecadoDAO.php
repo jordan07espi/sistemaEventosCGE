@@ -59,7 +59,12 @@ class BecadoDAO {
         $sheet = $spreadsheet->getActiveSheet();
         $highestRow = $sheet->getHighestRow();
         $registros_insertados = 0;
-        $registros_omitidos = 0;
+        $filas_procesadas = 0;
+
+        // Preparamos una única sentencia de inserción que se reutilizará
+        $stmt_insert = $this->conn->prepare(
+            "INSERT IGNORE INTO becados (nombres_apellidos, cedula, programa, ateneas_cursadas, estado) VALUES (?, ?, ?, 0, 'Activo')"
+        );
 
         $this->conn->beginTransaction();
         try {
@@ -68,22 +73,24 @@ class BecadoDAO {
                 $cedula = trim($sheet->getCell('B' . $row)->getValue());
                 $programa = trim($sheet->getCell('C' . $row)->getValue());
 
-                if (empty($cedula) || empty($nombres_apellidos)) continue; // Omitir filas vacías
-
-                // Validar que la cédula no exista para evitar duplicados
-                $stmt_check = $this->conn->prepare("SELECT COUNT(*) FROM becados WHERE cedula = ?");
-                $stmt_check->execute([$cedula]);
-                if ($stmt_check->fetchColumn() > 0) {
-                    $registros_omitidos++;
-                    continue;
+                if (empty($cedula) || empty($nombres_apellidos)) {
+                    continue; // Omitir filas con datos esenciales faltantes
                 }
-
-                $stmt_insert = $this->conn->prepare("INSERT INTO becados (nombres_apellidos, cedula, programa, ateneas_cursadas, estado) VALUES (?, ?, ?, 0, 'Activo')");
+                
+                $filas_procesadas++;
                 $stmt_insert->execute([$nombres_apellidos, $cedula, $programa]);
-                $registros_insertados++;
+                
+                // rowCount() nos dirá si la inserción fue exitosa (1) o ignorada (0)
+                if ($stmt_insert->rowCount() > 0) {
+                    $registros_insertados++;
+                }
             }
             $this->conn->commit();
-            return ['insertados' => $registros_insertados, 'omitidos' => $registros_omitidos];
+
+            return [
+                'insertados' => $registros_insertados, 
+                'omitidos' => $filas_procesadas - $registros_insertados
+            ];
         } catch (Exception $e) {
             $this->conn->rollBack();
             throw new Exception("Error al procesar el archivo Excel: " . $e->getMessage());

@@ -280,6 +280,25 @@ function renderizarPaginacionBecados(pagination) {
 
 
 
+function showNotification(message, type = 'success') {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    // Reemplazamos los saltos de línea (\n) por etiquetas <br> para que se vean bien en HTML
+    const formattedMessage = message.replace(/\n/g, '<br>');
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="min-width: 300px;">
+            ${formattedMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `);
+
+    $('#notification-area').append(notification);
+
+    // Hacemos que la notificación desaparezca sola después de 5 segundos
+    setTimeout(() => {
+        notification.alert('close');
+    }, 5000);
+}
 
 
 // =============================================================
@@ -515,37 +534,6 @@ $(document).ready(function() {
         }
     });
 
-
-
-
-
-    $('#form-importar-becados').on('submit', function(e) {
-        e.preventDefault();
-        const form = $(this);
-        const submitButton = form.find('button[type="submit"]');
-        const originalButtonText = submitButton.html();
-        submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Importando...');
-
-        $.ajax({
-            url: basePath + 'BecadoControlador.php',
-            type: 'POST',
-            data: new FormData(this),
-            dataType: 'json',
-            contentType: false,
-            processData: false,
-            success: r => {
-                if (r.status === 'success') {
-                    alert(r.message);
-                    renderizarTablaBecados(r.data);
-                    form[0].reset();
-                } else {
-                    alert('Error: ' + r.message);
-                }
-            },
-            error: () => alert('Error de comunicación.'),
-            complete: () => submitButton.prop('disabled', false).html(originalButtonText)
-        });
-    });
 
     // =============================================================
     // LÓGICA PARA EL MÓDULO DE ESCANEO QR (check-in)
@@ -854,8 +842,6 @@ $(document).ready(function() {
         });
 
 
-
-
         // Manejador para el formulario de importación
         $('#form-importar-becados').on('submit', function(e) {
             e.preventDefault();
@@ -866,28 +852,36 @@ $(document).ready(function() {
             submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Importando...');
 
             $.ajax({
-            url: basePath + 'BecadoControlador.php',
-            type: 'POST',
-            data: new FormData(this),
-            dataType: 'json',
-            contentType: false,
-            processData: false,
-            success: function(response) {
-                if (response.status === 'success') {
-                $('#importModal').modal('hide');
-                alert(response.message);
-                cargarBecados(); // Recargar la tabla para ver los nuevos registros
-                } else {
-                alert('Error: ' + response.message);
+                url: basePath + 'BecadoControlador.php',
+                type: 'POST',
+                data: new FormData(this),
+                dataType: 'json',
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    // Si la importación fue exitosa...
+                    if (response.status === 'success') {
+                        $('#importarBecadosModal').modal('hide'); // Ocultamos el modal
+                        
+                        // Mostramos la notificación elegante en lugar del alert()
+                        showNotification(response.message);
+
+                        // Usamos los datos que ya vinieron en la respuesta para actualizar la tabla
+                        // ¡Esto evita la segunda llamada innecesaria al servidor!
+                        renderizarTablaBecados(response.data);
+                        renderizarPaginacionBecados(response.pagination);
+                    } else {
+                        // Si hubo un error, también lo mostramos con la nueva notificación
+                        showNotification(response.message, 'danger');
+                    }
+                },
+                error: function() {
+                    showNotification('Ocurrió un error de comunicación.', 'danger');
+                },
+                complete: function() {
+                    submitButton.prop('disabled', false).html(originalButtonText);
+                    form[0].reset();
                 }
-            },
-            error: function() {
-                alert('Ocurrió un error de comunicación.');
-            },
-            complete: function() {
-                submitButton.prop('disabled', false).html(originalButtonText);
-                form[0].reset();
-            }
             });
         });
 

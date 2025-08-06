@@ -1,33 +1,11 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center">
         <h2>Gestión de Estudiantes Becados</h2>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importarBecadosModal">
+            <i class="fas fa-file-excel"></i> Importar desde Excel
+        </button>
     </div>
     <hr>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            Importar Becados desde Excel
-        </div>
-        <div class="card-body">
-            <form id="form-importar-becados" enctype="multipart/form-data">
-                <input type="hidden" name="accion" value="importar_excel">
-                <div class="row align-items-end">
-                    <div class="col-md-8">
-                        <label for="archivo_excel" class="form-label">Seleccionar archivo (.xlsx, .xls)</label>
-                        <input type="file" class="form-control" name="archivo_excel" id="archivo_excel" accept=".xlsx, .xls" required>
-                        <div class="form-text">
-                            El archivo debe tener 3 columnas: <strong>NOMBRE Y APELLIDOS, CÉDULA, PROGRAMA</strong> (en ese orden).
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="fas fa-file-excel"></i> Importar Estudiantes
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <div class="card">
         <div class="card-header">
@@ -69,3 +47,34 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="importarBecadosModal" tabindex="-1" aria-labelledby="importarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importarModalLabel">Importar Becados desde Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="form-importar-becados" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="hidden" name="accion" value="importar_excel">
+                    
+                    <label for="archivo_excel" class="form-label">Seleccionar archivo (.xlsx, .xls)</label>
+                    <input type="file" class="form-control" name="archivo_excel" id="archivo_excel" accept=".xlsx, .xls" required>
+                    
+                    <div class="form-text mt-2">
+                        El archivo debe tener 3 columnas en este orden: <strong>NOMBRE Y APELLIDOS, CÉDULA, PROGRAMA</strong>.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Importar Estudiantes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="notification-area" class="position-fixed top-0 end-0 p-3" style="z-index: 1055"></div>
