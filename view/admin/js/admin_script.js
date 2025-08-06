@@ -238,17 +238,15 @@ function renderizarPaginacionBecados(pagination) {
 // =============================================================
 // CÓDIGO PRINCIPAL
 // =============================================================
-$(document).ready(function() {
+const basePath = '../../controller/';
 
-    const basePath = '../../controller/'; // Ruta base para las llamadas AJAX desde view/admin/
+$(document).ready(function() {
 
     // --- CARGA INICIAL DE LISTAS ---
     if ($('#tabla-categorias-body').length) $.get(basePath + 'CategoriaControlador.php', response => renderizarTablaCategorias(response.data), 'json');
     if ($('#tabla-lugares-body').length) $.get(basePath + 'LugarControlador.php', response => renderizarTablaLugares(response.data), 'json');
     if ($('#tabla-eventos-body').length) $.get(basePath + 'EventoControlador.php', response => renderizarTablaEventos(response.data), 'json');
-    if ($('#tabla-becados-body').length) {
-        $.get(basePath + 'BecadoControlador.php', response => renderizarTablaBecados(response.data), 'json');
-    }
+    // (Hemos eliminado el bloque para 'tabla-becados-body' de aquí)
     //if ($('#tabla-usuarios-body').length) $.get(basePath + 'UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
 
     // --- FORMULARIOS SIN ARCHIVOS (Categoría y Lugar) ---
@@ -440,18 +438,39 @@ $(document).ready(function() {
         });
     }
 
+    // --- ¡BLOQUE ÚNICO Y CORREGIDO PARA CAMBIAR ESTADO! ---
     $('#tabla-becados-body').on('click', '.btn-cambiar-estado-becado', function() {
-        if (!confirm('¿Estás seguro de cambiar el estado de este estudiante?')) return;
+        // Se extraen los datos del botón en el que se hizo clic
         const id = $(this).data('id');
         const estado = $(this).data('estado');
-        $.post(basePath + 'BecadoControlador.php', { accion: 'cambiar_estado', id_becado: id, estado_actual: estado }, response => {
-            if (response.status === 'success') {
-                renderizarTablaBecados(response.data);
-            } else {
-                alert('Error: ' + response.message);
-            }
-        }, 'json');
+        
+        // Se muestra un mensaje de confirmación
+        if (confirm(`¿Seguro que quieres cambiar el estado de este becado?`)) {
+            
+            // Se realiza la llamada al controlador con los parámetros correctos
+            $.post(basePath + 'BecadoControlador.php', { 
+                accion: 'cambiar_estado', 
+                id: id, 
+                estado: estado 
+            }, response => {
+                // Si la respuesta del servidor es exitosa...
+                if (response.status === 'success') {
+                    // Se recarga la tabla para mostrar el cambio,
+                    // manteniendo la búsqueda y paginación actual.
+                    const searchTerm = $('#search-becados-input').val(); // <-- Usa el ID correcto
+                    const currentPage = $('#pagination-controls .active a').data('page') || 1;
+                    cargarBecados(searchTerm, currentPage);
+                } else {
+                    // Si hay un error, se muestra un mensaje
+                    alert('Error: ' + response.message);
+                }
+            }, 'json');
+        }
     });
+
+
+
+
 
     $('#form-importar-becados').on('submit', function(e) {
         e.preventDefault();
@@ -745,14 +764,14 @@ $(document).ready(function() {
         });
     }
 
-    // --- MANEJADORES DE EVENTOS (DENTRO DEL document.ready) ---
+    // --- MANEJADORES DE EVENTOS 
     if ($('#tabla-becados-body').length) {
         // Carga inicial
         cargarBecados();
 
         // Búsqueda en tiempo real
         let searchTimeout;
-        $('#search-becados').on('keyup', function() {
+        $('#search-becados-input').on('keyup', function() {
             clearTimeout(searchTimeout);
             const searchTerm = $(this).val();
             searchTimeout = setTimeout(() => {
@@ -765,35 +784,15 @@ $(document).ready(function() {
             e.preventDefault();
             if ($(this).parent().hasClass('disabled')) return;
             const page = $(this).data('page');
-            const searchTerm = $('#search-becados').val();
+            const searchTerm = $('#search-becados-input').val();
             cargarBecados(searchTerm, page);
         });
 
-        // --- ¡BLOQUE CORREGIDO AQUÍ! ---
-        // Clic en el botón de cambiar estado
-        $('#tabla-becados-body').on('click', '.btn-cambiar-estado-becado', function() {
-            const id = $(this).data('id');
-            const estado = $(this).data('estado');
-            if (confirm(`¿Seguro que quieres cambiar el estado de este becado?`)) {
-                // Añadimos el parámetro 'accion' a los datos que enviamos
-                $.post(basePath + 'BecadoControlador.php', { 
-                    accion: 'cambiar_estado', 
-                    id: id, 
-                    estado: estado 
-                }, response => {
-                    if (response.status === 'success') {
-                        const searchTerm = $('#search-becados').val();
-                        const currentPage = $('#pagination-controls .active a').data('page') || 1;
-                        cargarBecados(searchTerm, currentPage);
-                    } else {
-                        alert('Error: ' + response.message);
-                    }
-                }, 'json');
-            }
-        });
+
+
 
         // Manejador para el formulario de importación
-        $('#form-import-becados').on('submit', function(e) {
+        $('#form-importar-becados').on('submit', function(e) {
             e.preventDefault();
             const form = $(this);
             const submitButton = form.find('button[type="submit"]');
