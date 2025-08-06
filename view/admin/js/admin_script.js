@@ -697,47 +697,106 @@ $(document).ready(function() {
         }
     }
 
-    // --- LÓGICA PARA EL GRÁFICO DEL DASHBOARD ---
+    // --- LÓGICA PARA EL GRÁFICO Y FILTROS DEL DASHBOARD ---
     if ($('#participantesPorEventoChart').length) {
-        $.ajax({
-            url: '../../controller/DashboardControlador.php',
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                const ctx = document.getElementById('participantesPorEventoChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: response.labels,
-                        datasets: [{
-                            label: 'Nº de Participantes',
-                            data: response.data,
-                            backgroundColor: 'rgba(78, 115, 223, 0.8)',
-                            borderColor: 'rgba(78, 115, 223, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 10
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
+        const ctx = document.getElementById('participantesPorEventoChart').getContext('2d');
+        let dashboardChart = null; // Hacemos la variable del gráfico accesible globalmente en este scope
+
+        // Función para crear o actualizar el gráfico
+        function renderizarGraficoDashboard(chartData) {
+            // Si ya existe un gráfico, lo destruimos antes de crear uno nuevo
+            if (dashboardChart) {
+                dashboardChart.destroy();
+            }
+            
+            dashboardChart = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                // Forzar a que los ticks sean números enteros
+                                stepSize: 1,
+                                callback: function(value) { if (Number.isInteger(value)) { return value; } },
                             }
                         }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true, // Mostramos la leyenda para diferenciar 'Registrados' de 'Asistentes'
+                            position: 'top'
+                        }
                     }
-                });
-            },
-            error: function() {
-                $('#participantesPorEventoChart').parent().html('<p class="text-center text-danger">No se pudieron cargar los datos del gráfico.</p>');
-            }
+                }
+            });
+        }
+        
+        // Función para actualizar las tarjetas de datos
+        function actualizarTarjetas(cardData) {
+            $('#total-eventos').text(cardData.total_eventos);
+            $('#total-participantes').text(cardData.total_participantes);
+            $('#total-asistentes').text(cardData.total_asistentes);
+            $('#total-ingresos').text('$' + parseFloat(cardData.total_ingresos).toFixed(2));
+        }
+
+        // Función principal para cargar todos los datos del dashboard
+        function cargarDatosDashboard(idEvento = null) {
+            const params = {
+                accion: 'get_datos_evento',
+                id_evento: idEvento
+            };
+            
+            $.ajax({
+                url: '../../controller/DashboardControlador.php',
+                type: 'GET',
+                data: params,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        actualizarTarjetas(response.datos_tarjetas);
+                        renderizarGraficoDashboard(response.datos_grafico);
+
+                        // Actualizar el título del gráfico
+                        if (idEvento) {
+                             const nombreEvento = $('#evento-dashboard-select option:selected').text();
+                             $('#grafico-titulo').text(`Distribución por Carrera/Curso - ${nombreEvento}`);
+                        } else {
+                             $('#grafico-titulo').text('Distribución de Participantes por Evento');
+                        }
+                    }
+                },
+                error: function() {
+                     $('#participantesPorEventoChart').parent().html('<p class="text-center text-danger">No se pudieron cargar los datos del gráfico.</p>');
+                }
+            });
+        }
+
+        // Cargar el dropdown de eventos al iniciar la página
+        $.ajax({
+             url: '../../controller/DashboardControlador.php',
+             type: 'GET',
+             data: { accion: 'get_lista_eventos' },
+             dataType: 'json',
+             success: function(response) {
+                if (response.status === 'success') {
+                    const select = $('#evento-dashboard-select');
+                    response.data.forEach(evento => {
+                        select.append(`<option value="${evento.id}">${evento.nombre}</option>`);
+                    });
+                }
+             }
+        });
+        
+        // Carga inicial de datos para todo el dashboard
+        cargarDatosDashboard();
+
+        // Manejador de eventos para el cambio en el dropdown
+        $('#evento-dashboard-select').on('change', function() {
+            const idEventoSeleccionado = $(this).val();
+            cargarDatosDashboard(idEventoSeleccionado);
         });
     }
 

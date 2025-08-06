@@ -8,98 +8,116 @@ class DashboardDAO {
         $this->conn = (new Conexion())->getConnection();
     }
 
-    // Devuelve el número total de eventos activos
-    public function getTotalEventosActivos() {
-        $stmt = $this->conn->prepare("SELECT COUNT(id) FROM eventos WHERE estado = 'Activo'");
-        $stmt->execute();
-        return $stmt->fetchColumn();
-    }
+    /**
+     * Obtiene los datos globales para las tarjetas principales.
+     * Si se pasa un id_evento, calcula los datos solo para ese evento.
+     */
+    public function getDatosGenerales($id_evento = null) {
+        $response = [
+            'total_eventos' => 0,
+            'total_participantes' => 0,
+            'total_asistentes' => 0,
+            'total_ingresos' => 0.00
+        ];
 
-    // Devuelve el número total de participantes registrados
-    public function getTotalParticipantes() {
-        $stmt = $this->conn->prepare("SELECT COUNT(id) FROM participantes");
-        $stmt->execute();
-        return $stmt->fetchColumn();
-    }
+        // Contar total de eventos (siempre es global)
+        $stmt_eventos = $this->conn->prepare("SELECT COUNT(id) FROM eventos");
+        $stmt_eventos->execute();
+        $response['total_eventos'] = $stmt_eventos->fetchColumn();
 
-    // Devuelve la suma total de los precios de las entradas de los participantes registrados
-    public function getTotalIngresos() {
-        $query = "
-            SELECT SUM(te.precio) 
-            FROM participantes p
-            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
-        ";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        $total = $stmt->fetchColumn();
-        return $total ?? 0; // Devuelve 0 si no hay ingresos
-    }
+        // Construir queries con filtro opcional
+        $filtro_sql = ($id_evento) ? "WHERE p.id_evento = :id_evento" : "";
+        
+        $query_participantes = "SELECT 
+                                    COUNT(p.id) as total_participantes,
+                                    COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 ELSE NULL END) as total_asistentes,
+                                    SUM(te.precio) as total_ingresos
+                                FROM participantes p
+                                JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+                                $filtro_sql";
 
-    // Devuelve los datos del próximo evento
-    public function getProximoEvento() {
-        $query = "
-            SELECT e.nombre, MIN(c.fecha) as proxima_fecha
-            FROM eventos e
-            JOIN calendarios c ON e.id = c.id_evento
-            WHERE e.estado = 'Activo' AND c.fecha >= CURDATE()
-            GROUP BY e.id, e.nombre
-            ORDER BY proxima_fecha ASC
-            LIMIT 1
-        ";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
-    }
+        $stmt_participantes = $this->conn->prepare($query_participantes);
+        if ($id_evento) {
+            $stmt_participantes->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        }
+        $stmt_participantes->execute();
+        $datos = $stmt_participantes->fetch(PDO::FETCH_ASSOC);
 
+        if ($datos) {
+            $response['total_participantes'] = (int) $datos['total_participantes'];
+            $response['total_asistentes'] = (int) $datos['total_asistentes'];
+            $response['total_ingresos'] = number_format((float) $datos['total_ingresos'], 2, '.', '');
+        }
+        
+        return $response;
+    }
 
     /**
-     * Obtiene el total de participantes para cada evento activo.
+     * Obtiene los datos para el gráfico de barras.
+     * Si no se pasa id_evento, obtiene los datos de todos los eventos.
+     * Si se pasa id_evento, obtiene la distribución por carrera/curso de ese evento.
      */
-    public function getParticipantesPorEvento() {
-        $query = "
-            SELECT e.nombre AS nombre_evento, COUNT(p.id) AS total_participantes
-            FROM eventos e
-            LEFT JOIN calendarios c ON e.id = c.id_evento
-            LEFT JOIN tipos_entrada te ON c.id = te.id_calendario
-            LEFT JOIN participantes p ON te.id = p.id_tipo_entrada
-            WHERE e.estado = 'Activo'
-            GROUP BY e.id, e.nombre
-            ORDER BY total_participantes DESC
-        ";
-        $stmt = $this->conn->prepare($query);
+    public function getDatosGraficoPrincipal($id_evento = null) {
+        if ($id_evento) {
+            // Vista detallada: distribución por carrera/curso para un evento específico
+            $query = "SELECT 
+                        COALESCE(NULLIF(carrera, ''), NULLIF(curso, ''), 'No especificado') as grupo,
+                        COUNT(id) as registrados,
+                        COUNT(CASE WHEN asistencia = 'Registrado' THEN 1 ELSE NULL END) as asistentes
+                      FROM participantes
+                      WHERE id_evento = :id_evento
+                      GROUP BY grupo
+                      ORDER BY registrados DESC";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        } else {
+            // Vista general: comparación entre eventos
+            $query = "SELECT 
+                        ev.nombre as grupo,
+                        COUNT(p.id) as registrados,
+                        COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 ELSE NULL END) as asistentes
+                      FROM eventos ev
+                      LEFT JOIN participantes p ON ev.id = p.id_evento
+                      GROUP BY ev.id, ev.nombre
+                      ORDER BY registrados DESC";
+            $stmt = $this->conn->prepare($query);
+        }
+
+        $stmt->execute();
+        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $labels = array_column($resultados, 'grupo');
+        $registrados = array_column($resultados, 'registrados');
+        $asistentes = array_column($resultados, 'asistentes');
+
+        return [
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'label' => 'Registrados',
+                    'data' => $registrados,
+                    'backgroundColor' => 'rgba(54, 162, 235, 0.7)',
+                    'borderColor' => 'rgba(54, 162, 235, 1)',
+                    'borderWidth' => 1
+                ],
+                [
+                    'label' => 'Asistentes',
+                    'data' => $asistentes,
+                    'backgroundColor' => 'rgba(75, 192, 192, 0.7)',
+                    'borderColor' => 'rgba(75, 192, 192, 1)',
+                    'borderWidth' => 1
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Obtiene una lista de todos los eventos para poblar el dropdown del dashboard.
+     */
+    public function getListaEventos() {
+        $stmt = $this->conn->prepare("SELECT id, nombre FROM eventos ORDER BY nombre ASC");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-
-    /**
-     * Devuelve el número de participantes registrados en el mes actual.
-     */
-    public function getNuevosParticipantesMes() {
-        $query = "
-            SELECT COUNT(id) 
-            FROM participantes 
-            WHERE MONTH(fecha_registro) = MONTH(CURDATE()) AND YEAR(fecha_registro) = YEAR(CURDATE())
-        ";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchColumn();
-    }
-
-    /**
-     * Devuelve la suma de ingresos generados en el mes actual.
-     */
-    public function getIngresosMesActual() {
-        $query = "
-            SELECT SUM(te.precio) 
-            FROM participantes p
-            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
-            WHERE MONTH(p.fecha_registro) = MONTH(CURDATE()) AND YEAR(p.fecha_registro) = YEAR(CURDATE())
-        ";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        $total = $stmt->fetchColumn();
-        return $total ?? 0; // Devuelve 0 si no hay ingresos
     }
 }
 ?>
