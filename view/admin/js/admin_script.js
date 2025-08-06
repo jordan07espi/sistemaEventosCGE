@@ -118,18 +118,35 @@ function renderizarPaginacionParticipantes(paginacion) {
     if (paginacion.total_paginas <= 1) return;
 
     let html = '<nav><ul class="pagination">';
+    const { pagina: current_page, total_paginas } = paginacion;
+
     // Botón Anterior
-    html += `<li class="page-item ${paginacion.pagina <= 1 ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${paginacion.pagina - 1}">Anterior</a></li>`;
-    // Números de página
-    for (let i = 1; i <= paginacion.total_paginas; i++) {
-        html += `<li class="page-item ${i === paginacion.pagina ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-    }
+    html += `<li class="page-item ${current_page <= 1 ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${current_page - 1}">Anterior</a></li>`;
+
+    // --- Lógica de paginación inteligente ---
+    const pagesToShow = [];
+    const window = 2;
+
+    pagesToShow.push(1);
+    if (current_page > window + 2) pagesToShow.push('...');
+    for (let i = Math.max(2, current_page - window); i <= Math.min(total_paginas - 1, current_page + window); i++) pagesToShow.push(i);
+    if (current_page < total_paginas - window - 1) pagesToShow.push('...');
+    if (total_paginas > 1) pagesToShow.push(total_paginas);
+
+    const uniquePages = [...new Set(pagesToShow)];
+    uniquePages.forEach(page => {
+        if (page === '...') {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        } else {
+            html += `<li class="page-item ${page === current_page ? 'active' : ''}"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`;
+        }
+    });
+
     // Botón Siguiente
-    html += `<li class="page-item ${paginacion.pagina >= paginacion.total_paginas ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${paginacion.pagina + 1}">Siguiente</a></li>`;
+    html += `<li class="page-item ${current_page >= total_paginas ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${current_page + 1}">Siguiente</a></li>`;
     html += '</ul></nav>';
     container.html(html);
 }
-
 
 
 function renderizarTablaUsuarios(usuarios) {
@@ -225,9 +242,39 @@ function renderizarPaginacionBecados(pagination) {
     const nextDisabled = current_page === total_pages ? 'disabled' : '';
 
     paginationControls.append(`<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${current_page - 1}">Anterior</a></li>`);
-    for (let i = 1; i <= total_pages; i++) {
-        paginationControls.append(`<li class="page-item ${i === current_page ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
+    
+    // --- Lógica de paginación inteligente ---
+    const pagesToShow = [];
+    const window = 2; // Cantidad de páginas a mostrar alrededor de la actual
+
+    pagesToShow.push(1); // Siempre mostrar la primera página
+
+    if (current_page > window + 2) {
+        pagesToShow.push('...');
     }
+
+    for (let i = Math.max(2, current_page - window); i <= Math.min(total_pages - 1, current_page + window); i++) {
+        pagesToShow.push(i);
+    }
+
+    if (current_page < total_pages - window - 1) {
+        pagesToShow.push('...');
+    }
+    
+    if (total_pages > 1) {
+        pagesToShow.push(total_pages); // Siempre mostrar la última página
+    }
+
+    // Renderizar los botones de página
+    const uniquePages = [...new Set(pagesToShow)]; // Eliminar duplicados por si acaso
+    uniquePages.forEach(page => {
+        if (page === '...') {
+            paginationControls.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+        } else {
+            paginationControls.append(`<li class="page-item ${page === current_page ? 'active' : ''}"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`);
+        }
+    });
+
     paginationControls.append(`<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${current_page + 1}">Siguiente</a></li>`);
 }
 
@@ -549,9 +596,27 @@ $(document).ready(function() {
             if (!paginacion || paginacion.total_paginas <= 1) return;
 
             let html = '<nav><ul class="pagination">';
-            for (let i = 1; i <= paginacion.total_paginas; i++) {
-                html += `<li class="page-item ${i === paginacion.pagina ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-            }
+            const { pagina: current_page, total_paginas } = paginacion;
+
+            // --- Lógica de paginación inteligente ---
+            const pagesToShow = [];
+            const window = 2;
+
+            pagesToShow.push(1);
+            if (current_page > window + 2) pagesToShow.push('...');
+            for (let i = Math.max(2, current_page - window); i <= Math.min(total_paginas - 1, current_page + window); i++) pagesToShow.push(i);
+            if (current_page < total_paginas - window - 1) pagesToShow.push('...');
+            if (total_paginas > 1) pagesToShow.push(total_paginas);
+
+            const uniquePages = [...new Set(pagesToShow)];
+            uniquePages.forEach(page => {
+                if (page === '...') {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                } else {
+                    html += `<li class="page-item ${page === current_page ? 'active' : ''}"><a class="page-link" href="#" data-page="${page}">${page}</a></li>`;
+                }
+            });
+
             html += '</ul></nav>';
             container.html(html);
         }

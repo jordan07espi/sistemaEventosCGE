@@ -7,7 +7,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class BecadoDAO {
     private $conn;
-    private $registros_por_pagina = 10;
+    private $registros_por_pagina = 25;
 
     public function __construct() {
         $this->conn = (new Conexion())->getConnection();
