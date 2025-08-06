@@ -30,8 +30,22 @@
     </div>
 
     <div class="card">
+        <div class="card-header">
+            <div class="row justify-content-between align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="search-becados-input" class="form-control" placeholder="Buscar por nombre o cédula...">
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                    <small id="pagination-info" class="text-muted"></small>
+                </div>
+            </div>
+        </div>
         <div class="card-body">
-            <table class="table table-striped table-hover">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
                     <thead>
                         <tr>
                             <th>Cédula</th>
@@ -42,10 +56,16 @@
                             <th>Acciones</th>
                         </tr>
                     </thead>
-                <tbody id="tabla-becados-body">
-                    <tr><td colspan="5" class="text-center">Cargando...</td></tr>
-                </tbody>
-            </table>
+                    <tbody id="tabla-becados-body">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-center">
+            <nav>
+                <ul class="pagination" id="pagination-controls">
+                    </ul>
+            </nav>
         </div>
     </div>
 </div>

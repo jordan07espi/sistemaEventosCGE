@@ -112,7 +112,7 @@ function renderizarTablaParticipantes(participantes) {
 
 }
 
-function renderizarPaginacion(paginacion) {
+function renderizarPaginacionParticipantes(paginacion) {
     const container = $('#pagination-container');
     container.empty();
     if (paginacion.total_paginas <= 1) return;
@@ -153,17 +153,31 @@ function renderizarTablaUsuarios(usuarios) {
 
 
 // =============================================================
-// ECCIÓN PARA GESTIÓN DE BECADOS!
+// SECCIÓN PARA GESTIÓN DE BECADOS
 // =============================================================
 
-// Función para renderizar la tabla de becados
+// --- FUNCIÓN PRINCIPAL PARA CARGAR BECADOS ---
+function cargarBecados(searchTerm = '', page = 1) {
+    const tablaBody = $('#tabla-becados-body');
+    tablaBody.html('<tr><td colspan="6" class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></td></tr>');
+
+    $.get(basePath + 'BecadoControlador.php', { accion: 'listar', search: searchTerm, page: page }, response => {
+        if (response.status === 'success') {
+            renderizarTablaBecados(response.data);
+            renderizarPaginacionBecados(response.pagination);
+        } else {
+            tablaBody.html('<tr><td colspan="6" class="text-center text-danger">Error al cargar los becados.</td></tr>');
+        }
+    }, 'json');
+}
+
+// --- FUNCIÓN PARA RENDERIZAR LA TABLA ---
 function renderizarTablaBecados(becados) {
     const tablaBody = $('#tabla-becados-body');
-    if (!tablaBody.length) return;
     tablaBody.empty();
 
     if (!becados || becados.length === 0) {
-        tablaBody.append('<tr><td colspan="5" class="text-center">No hay estudiantes becados registrados.</td></tr>');
+        tablaBody.append('<tr><td colspan="6" class="text-center">No se encontraron resultados.</td></tr>');
         return;
     }
 
@@ -172,7 +186,6 @@ function renderizarTablaBecados(becados) {
         const botonTexto = b.estado === 'Activo' ? 'Desactivar' : 'Activar';
         const botonClase = b.estado === 'Activo' ? 'btn-warning' : 'btn-success';
 
-        // --- ESTRUCTURA DE LA FILA ACTUALIZADA ---
         const fila = `
             <tr>
                 <td>${b.cedula}</td>
@@ -187,6 +200,35 @@ function renderizarTablaBecados(becados) {
         `;
         tablaBody.append(fila);
     });
+}
+
+// --- FUNCIÓN PARA RENDERIZAR LA PAGINACIÓN ---
+function renderizarPaginacionBecados(pagination) {
+    const { total_records, current_page, total_pages, limit } = pagination; 
+    const paginationControls = $('#pagination-controls');
+    const paginationInfo = $('#pagination-info');
+    paginationControls.empty();
+    
+    if (total_records === 0) {
+        paginationInfo.text('No hay registros');
+        return;
+    }
+
+    const startRecord = (current_page - 1) * limit + 1;
+    const endRecord = Math.min(startRecord + limit - 1, total_records);
+    paginationInfo.text(`Mostrando ${startRecord}-${endRecord} de ${total_records} registros`);
+
+    if (total_pages <= 1) return;
+
+    // Lógica para botones Anterior y Siguiente
+    const prevDisabled = current_page === 1 ? 'disabled' : '';
+    const nextDisabled = current_page === total_pages ? 'disabled' : '';
+
+    paginationControls.append(`<li class="page-item ${prevDisabled}"><a class="page-link" href="#" data-page="${current_page - 1}">Anterior</a></li>`);
+    for (let i = 1; i <= total_pages; i++) {
+        paginationControls.append(`<li class="page-item ${i === current_page ? 'active' : ''}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
+    }
+    paginationControls.append(`<li class="page-item ${nextDisabled}"><a class="page-link" href="#" data-page="${current_page + 1}">Siguiente</a></li>`);
 }
 
 
@@ -204,7 +246,10 @@ $(document).ready(function() {
     if ($('#tabla-categorias-body').length) $.get(basePath + 'CategoriaControlador.php', response => renderizarTablaCategorias(response.data), 'json');
     if ($('#tabla-lugares-body').length) $.get(basePath + 'LugarControlador.php', response => renderizarTablaLugares(response.data), 'json');
     if ($('#tabla-eventos-body').length) $.get(basePath + 'EventoControlador.php', response => renderizarTablaEventos(response.data), 'json');
-    if ($('#tabla-usuarios-body').length) $.get(basePath + 'UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
+    if ($('#tabla-becados-body').length) {
+        $.get(basePath + 'BecadoControlador.php', response => renderizarTablaBecados(response.data), 'json');
+    }
+    //if ($('#tabla-usuarios-body').length) $.get(basePath + 'UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
 
     // --- FORMULARIOS SIN ARCHIVOS (Categoría y Lugar) ---
     $('#form-categoria, #form-lugar').on('submit', function(e) {
@@ -213,8 +258,17 @@ $(document).ready(function() {
         let redirectUrl = form.is('#form-categoria') ? 'categorias.php' : 'lugares.php';
         $.ajax({
             url: form.attr('action'),
-            type: 'POST', data: form.serialize(), dataType: 'json',
-            success: r => { if(r.status==='success'){ alert(r.message); window.location.href=redirectUrl; } else { alert('Error: '+r.message); }},
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: r => {
+                if (r.status === 'success') {
+                    alert(r.message);
+                    window.location.href = redirectUrl;
+                } else {
+                    alert('Error: ' + r.message);
+                }
+            },
             error: () => alert('Error de comunicación.')
         });
     });
@@ -248,9 +302,19 @@ $(document).ready(function() {
         submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Guardando...');
         $.ajax({
             url: form.attr('action'),
-            type: 'POST', data: new FormData(this), dataType: 'json',
-            contentType: false, processData: false,
-            success: r => { if(r.status==='success'){ alert(r.message); window.location.href='eventos.php'; } else { alert('Error: '+r.message); }},
+            type: 'POST',
+            data: new FormData(this),
+            dataType: 'json',
+            contentType: false,
+            processData: false,
+            success: r => {
+                if (r.status === 'success') {
+                    alert(r.message);
+                    window.location.href = 'eventos.php';
+                } else {
+                    alert('Error: ' + r.message);
+                }
+            },
             error: () => alert('Error de comunicación al guardar evento.'),
             complete: () => submitButton.prop('disabled', false).html(originalButtonText)
         });
@@ -268,14 +332,22 @@ $(document).ready(function() {
 
     // --- ACCIONES EN detalle_evento.php ---
     if ($('#form-agregar-funcion').length) {
-        $(document).on('submit', '.form-eliminar-funcion, #form-agregar-funcion, .form-agregar-ponente, .form-agregar-entrada', function(e){
+        $(document).on('submit', '.form-eliminar-funcion, #form-agregar-funcion, .form-agregar-ponente, .form-agregar-entrada', function(e) {
             e.preventDefault();
             const form = $(this);
             if (form.is('.form-eliminar-funcion') && !confirm('¿Seguro que quieres eliminar?')) return;
             $.ajax({
                 url: form.attr('action'),
-                type: 'POST', data: form.serialize(), dataType: 'json',
-                success: r => { if(r.status==='success'){ location.reload(); } else { alert('Error: '+r.message); }},
+                type: 'POST',
+                data: form.serialize(),
+                dataType: 'json',
+                success: r => {
+                    if (r.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + r.message);
+                    }
+                },
                 error: () => alert('Error de comunicación.')
             });
         });
@@ -300,7 +372,6 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(response) {
                 if (response.status === 'success') {
-                    // Si todo va bien, simplemente redibujamos la tabla con los nuevos datos
                     renderizarTablaEventos(response.data);
                 } else {
                     alert('Error: ' + response.message);
@@ -310,18 +381,17 @@ $(document).ready(function() {
         });
     });
 
-    
     // --- LÓGICA PARA EL MÓDULO DE PARTICIPANTES ---
     if ($('#evento-select').length) {
         let idEventoSeleccionado = null;
         let busquedaActual = '';
-        const exportBtn = $('#export-excel-btn'); // Variable para el botón de exportar
+        const exportBtn = $('#export-excel-btn');
 
         function cargarParticipantes(pagina = 1) {
             if (!idEventoSeleccionado) return;
             const tablaBody = $('#tabla-participantes-body');
             tablaBody.html('<tr><td colspan="5" class="text-center">Cargando participantes...</td></tr>');
-            
+
             $.ajax({
                 url: '../../controller/ParticipanteControlador.php',
                 type: 'GET',
@@ -330,7 +400,7 @@ $(document).ready(function() {
                 success: function(response) {
                     if (response.status === 'success') {
                         renderizarTablaParticipantes(response.data);
-                        renderizarPaginacion(response.paginacion);
+                        renderizarPaginacionParticipantes(response.paginacion);
                     } else {
                         tablaBody.html('<tr><td colspan="5" class="text-center text-danger">Error al cargar los datos.</td></tr>');
                     }
@@ -343,24 +413,22 @@ $(document).ready(function() {
 
         $('#evento-select').on('change', function() {
             idEventoSeleccionado = $(this).val();
-            busquedaActual = ''; 
+            busquedaActual = '';
             $('#search-participante').val('').show();
-            
-            // --- Lógica para el botón de exportar ---
+
             if (idEventoSeleccionado) {
-                // Construimos la URL para el reporte y la asignamos al botón
                 const urlReporte = `../../controller/ReporteControlador.php?id_evento=${idEventoSeleccionado}`;
                 exportBtn.attr('href', urlReporte).show();
             } else {
                 exportBtn.hide();
             }
-            
+
             cargarParticipantes();
         });
 
         $('#search-participante').on('keyup', function() {
             busquedaActual = $(this).val();
-            cargarParticipantes(); // La búsqueda siempre vuelve a la página 1
+            cargarParticipantes();
         });
 
         $('#pagination-container').on('click', 'a.page-link', function(e) {
@@ -372,20 +440,12 @@ $(document).ready(function() {
         });
     }
 
-    
-    // =============================================================
-    // --- CARGA INICIAL Y ACCIONES PARA BECADOS ---
-    // =============================================================
-    if ($('#tabla-becados-body').length) {
-        $.get(basePath + 'BecadoControlador.php', response => renderizarTablaBecados(response.data), 'json');
-    }
-
     $('#tabla-becados-body').on('click', '.btn-cambiar-estado-becado', function() {
         if (!confirm('¿Estás seguro de cambiar el estado de este estudiante?')) return;
         const id = $(this).data('id');
         const estado = $(this).data('estado');
         $.post(basePath + 'BecadoControlador.php', { accion: 'cambiar_estado', id_becado: id, estado_actual: estado }, response => {
-            if(response.status === 'success') {
+            if (response.status === 'success') {
                 renderizarTablaBecados(response.data);
             } else {
                 alert('Error: ' + response.message);
@@ -421,11 +481,10 @@ $(document).ready(function() {
         });
     });
 
-
     // =============================================================
     // LÓGICA PARA EL MÓDULO DE ESCANEO QR (check-in)
     // =============================================================
-    if ($('#qr-reader').length) { // Si estamos en la página de escaneo
+    if ($('#qr-reader').length) {
         let html5QrCode = null;
         let idEventoSeleccionado = null;
         let busquedaAsistencia = '';
@@ -437,7 +496,6 @@ $(document).ready(function() {
         const scannerContainer = $('#scanner-container');
         const participantesContainer = $('#participantes-checkin-container');
 
-        // Función para renderizar la tabla de asistencia
         function renderizarTablaAsistencia(participantes) {
             const tablaBody = $('#tabla-asistencia-body');
             tablaBody.empty();
@@ -446,10 +504,10 @@ $(document).ready(function() {
                 return;
             }
             participantes.forEach(p => {
-                const estado = p.asistencia === 'Registrado' 
+                const estado = p.asistencia === 'Registrado'
                     ? '<span class="badge bg-success">Registrado</span>'
                     : '<span class="badge bg-warning text-dark">Pendiente</span>';
-                
+
                 const accion = p.asistencia !== 'Registrado'
                     ? `<button class="btn btn-success btn-sm btn-marcar-asistencia" data-id-participante="${p.id}">Marcar Asistencia</button>`
                     : '';
@@ -466,7 +524,6 @@ $(document).ready(function() {
             });
         }
 
-        // ¡NUEVA FUNCIÓN PARA RENDERIZAR PAGINACIÓN DE ASISTENCIA!
         function renderizarPaginacionAsistencia(paginacion) {
             const container = $('#pagination-asistencia-container');
             container.empty();
@@ -479,22 +536,20 @@ $(document).ready(function() {
             html += '</ul></nav>';
             container.html(html);
         }
-        
-        // Función para cargar la lista de participantes (ACTUALIZADA)
+
         function cargarAsistencia(pagina = 1) {
             if (!idEventoSeleccionado) return;
             participantesContainer.show();
             $('#tabla-asistencia-body').html('<tr><td colspan="4" class="text-center">Cargando...</td></tr>');
-            
+
             $.get('../../controller/CheckinControlador.php', { id_evento: idEventoSeleccionado, busqueda: busquedaAsistencia, pagina: pagina }, function(response) {
-                if(response.status === 'success') {
+                if (response.status === 'success') {
                     renderizarTablaAsistencia(response.data);
-                    renderizarPaginacionAsistencia(response.paginacion); // Llamamos a la nueva función
+                    renderizarPaginacionAsistencia(response.paginacion);
                 }
             }, 'json');
         }
 
-        // Cuando se selecciona un evento
         $('#evento-checkin-select').on('change', function() {
             idEventoSeleccionado = $(this).val();
             searchInput.prop('disabled', false);
@@ -504,13 +559,11 @@ $(document).ready(function() {
             cargarAsistencia();
         });
 
-        // Cuando se busca en la barra
         searchInput.on('keyup', function() {
             busquedaAsistencia = $(this).val();
             cargarAsistencia();
         });
 
-        // ¡NUEVO MANEJADOR PARA LOS BOTONES DE PAGINACIÓN!
         $('#pagination-asistencia-container').on('click', 'a.page-link', function(e) {
             e.preventDefault();
             const pagina = $(this).data('page');
@@ -519,7 +572,6 @@ $(document).ready(function() {
             }
         });
 
-        // Botón Iniciar Cámara
         startBtn.on('click', function() {
             scannerContainer.slideDown();
             html5QrCode = new Html5Qrcode("qr-reader");
@@ -528,7 +580,6 @@ $(document).ready(function() {
             html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, () => {});
         });
 
-        // Botón Detener Cámara
         stopBtn.on('click', function() {
             if (html5QrCode) {
                 html5QrCode.stop().then(() => {
@@ -539,19 +590,16 @@ $(document).ready(function() {
             }
         });
 
-        // Al escanear un QR
         function onScanSuccess(decodedText, decodedResult) {
             html5QrCode.pause();
             verificarAsistencia(decodedText, idEventoSeleccionado, true);
         }
 
-        // Al marcar asistencia manualmente
         $('#tabla-asistencia-body').on('click', '.btn-marcar-asistencia', function() {
             const idParticipante = $(this).data('id-participante');
             verificarAsistencia(idParticipante, idEventoSeleccionado, false);
         });
 
-        // Función central para verificar (por QR o manual)
         function verificarAsistencia(valor, idEvento, esCedula) {
             const postData = { id_evento: idEvento };
             if (esCedula) {
@@ -566,7 +614,6 @@ $(document).ready(function() {
                 if (response.participante) content += `<p class="mb-0">${response.participante}</p>`;
                 resultContainer.html(`<div class="alert ${alertClass}">${content}</div>`);
 
-                // Si fue exitoso, actualizamos la tabla
                 if (response.status === 'success') {
                     cargarAsistencia();
                 }
@@ -587,12 +634,12 @@ $(document).ready(function() {
             success: function(response) {
                 const ctx = document.getElementById('participantesPorEventoChart').getContext('2d');
                 new Chart(ctx, {
-                    type: 'bar', // Tipo de gráfico: barras
+                    type: 'bar',
                     data: {
-                        labels: response.labels, // Nombres de los eventos
+                        labels: response.labels,
                         datasets: [{
                             label: 'Nº de Participantes',
-                            data: response.data, // Cantidad de participantes
+                            data: response.data,
                             backgroundColor: 'rgba(78, 115, 223, 0.8)',
                             borderColor: 'rgba(78, 115, 223, 1)',
                             borderWidth: 1
@@ -604,20 +651,19 @@ $(document).ready(function() {
                             y: {
                                 beginAtZero: true,
                                 ticks: {
-                                    stepSize: 10 // O ajusta según necesites
+                                    stepSize: 10
                                 }
                             }
                         },
                         plugins: {
                             legend: {
-                                display: false // Ocultamos la leyenda para un look más limpio
+                                display: false
                             }
                         }
                     }
                 });
             },
             error: function() {
-                // Manejo de error si no se pueden cargar los datos del gráfico
                 $('#participantesPorEventoChart').parent().html('<p class="text-center text-danger">No se pudieron cargar los datos del gráfico.</p>');
             }
         });
@@ -625,10 +671,8 @@ $(document).ready(function() {
 
     // --- LÓGICA PARA GESTIÓN DE USUARIOS ---
     if ($('#tabla-usuarios-body').length) {
-        // Carga inicial de usuarios
         $.get('../../controller/UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
 
-        // Envío del formulario de creación/edición
         $('#form-usuario').on('submit', function(e) {
             e.preventDefault();
             $.ajax({
@@ -648,7 +692,6 @@ $(document).ready(function() {
             });
         });
 
-        // Abrir el modal para resetear contraseña
         $('#tabla-usuarios-body').on('click', '.btn-reset-pass', function() {
             const id = $(this).data('id');
             const nombre = $(this).data('nombre');
@@ -656,11 +699,8 @@ $(document).ready(function() {
             $('#nombre-usuario-reset').text(nombre);
         });
 
-        // --- ¡BLOQUE CORREGIDO! ---
-        // Variable para guardar el mensaje de éxito temporalmente
         let resetSuccessMessage = '';
 
-        // Envío del formulario del modal de reseteo
         $('#form-reset-pass').on('submit', function(e) {
             e.preventDefault();
             const form = $(this);
@@ -671,9 +711,7 @@ $(document).ready(function() {
                 dataType: 'json',
                 success: r => {
                     if (r.status === 'success') {
-                        // 1. Guardamos el mensaje de éxito en nuestra variable.
                         resetSuccessMessage = r.message;
-                        // 2. Limpiamos y le decimos al modal que se oculte. NO mostramos el alert aquí.
                         form[0].reset();
                         $('#resetPasswordModal').modal('hide');
                     } else {
@@ -684,17 +722,13 @@ $(document).ready(function() {
             });
         });
 
-        // Evento que se dispara DESPUÉS de que el modal se haya ocultado completamente
         $('#resetPasswordModal').on('hidden.bs.modal', function() {
-            // 3. Si tenemos un mensaje de éxito guardado, lo mostramos ahora que la pantalla está limpia.
             if (resetSuccessMessage) {
                 alert(resetSuccessMessage);
-                resetSuccessMessage = ''; // Limpiamos la variable para el próximo uso.
+                resetSuccessMessage = '';
             }
         });
-        // --- FIN DEL BLOQUE CORREGIDO ---
 
-        // Eliminar usuario
         $('#tabla-usuarios-body').on('click', '.btn-eliminar-usuario', function() {
             if (!confirm('¿Seguro que quieres eliminar a este usuario?')) return;
             const id = $(this).data('id');
@@ -703,13 +737,96 @@ $(document).ready(function() {
                 id_usuario: id
             }, r => {
                 if (r.status === 'success') {
-                    // Recargamos la tabla para reflejar el cambio
                     $.get('../../controller/UsuarioControlador.php', response => renderizarTablaUsuarios(response.data), 'json');
                 } else {
                     alert('Error: ' + r.message);
                 }
             }, 'json');
         });
+    }
+
+    // --- MANEJADORES DE EVENTOS (DENTRO DEL document.ready) ---
+    if ($('#tabla-becados-body').length) {
+        // Carga inicial
+        cargarBecados();
+
+        // Búsqueda en tiempo real
+        let searchTimeout;
+        $('#search-becados').on('keyup', function() {
+            clearTimeout(searchTimeout);
+            const searchTerm = $(this).val();
+            searchTimeout = setTimeout(() => {
+                cargarBecados(searchTerm, 1);
+            }, 300);
+        });
+
+        // Clic en los botones de paginación
+        $('#pagination-controls').on('click', 'a.page-link', function(e) {
+            e.preventDefault();
+            if ($(this).parent().hasClass('disabled')) return;
+            const page = $(this).data('page');
+            const searchTerm = $('#search-becados').val();
+            cargarBecados(searchTerm, page);
+        });
+
+        // --- ¡BLOQUE CORREGIDO AQUÍ! ---
+        // Clic en el botón de cambiar estado
+        $('#tabla-becados-body').on('click', '.btn-cambiar-estado-becado', function() {
+            const id = $(this).data('id');
+            const estado = $(this).data('estado');
+            if (confirm(`¿Seguro que quieres cambiar el estado de este becado?`)) {
+                // Añadimos el parámetro 'accion' a los datos que enviamos
+                $.post(basePath + 'BecadoControlador.php', { 
+                    accion: 'cambiar_estado', 
+                    id: id, 
+                    estado: estado 
+                }, response => {
+                    if (response.status === 'success') {
+                        const searchTerm = $('#search-becados').val();
+                        const currentPage = $('#pagination-controls .active a').data('page') || 1;
+                        cargarBecados(searchTerm, currentPage);
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                }, 'json');
+            }
+        });
+
+        // Manejador para el formulario de importación
+        $('#form-import-becados').on('submit', function(e) {
+            e.preventDefault();
+            const form = $(this);
+            const submitButton = form.find('button[type="submit"]');
+            const originalButtonText = submitButton.html();
+
+            submitButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Importando...');
+
+            $.ajax({
+            url: basePath + 'BecadoControlador.php',
+            type: 'POST',
+            data: new FormData(this),
+            dataType: 'json',
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                if (response.status === 'success') {
+                $('#importModal').modal('hide');
+                alert(response.message);
+                cargarBecados(); // Recargar la tabla para ver los nuevos registros
+                } else {
+                alert('Error: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Ocurrió un error de comunicación.');
+            },
+            complete: function() {
+                submitButton.prop('disabled', false).html(originalButtonText);
+                form[0].reset();
+            }
+            });
+        });
+
     }
 
 });
