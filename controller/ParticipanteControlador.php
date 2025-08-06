@@ -1,9 +1,10 @@
 <?php
 require_once __DIR__ . '/../model/dao/ParticipanteDAO.php';
 require_once __DIR__ . '/../model/dao/TipoEntradaDAO.php';
-require_once __DIR__ . '/../model/dao/BecadoDAO.php'; 
+require_once __DIR__ . '/../model/dao/BecadoDAO.php';
 
 // --- MANEJADOR PARA SOLICITUDES GET (PANEL DE ADMIN) ---
+// Esta sección se mantiene sin cambios.
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     header('Content-Type: application/json');
     $response = ['status' => 'error', 'message' => 'No se especificó un evento.'];
@@ -13,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $id_evento = $_GET['id_evento'];
         $busqueda = $_GET['busqueda'] ?? '';
         $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
-        $limite = 25; // Registros por página
+        $limite = 25;
 
         $participantes = $participanteDAO->getParticipantesPorEventoId($id_evento, $busqueda, $pagina, $limite);
         $total = $participanteDAO->contarParticipantesPorEventoId($id_evento, $busqueda);
@@ -39,8 +40,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     $response = ['status' => 'error', 'errors' => ['Petición no válida.']];
     $errors = [];
+    
+    // ✅ CAMBIO #1: INSTANCIACIÓN ÚNICA DE OBJETOS DAO
+    // Se crean una sola vez al inicio del script para estar disponibles en todo momento.
     $participanteDAO = new ParticipanteDAO();
     $tipoEntradaDAO = new TipoEntradaDAO();
+    $becadoDAO = new BecadoDAO(); 
     
     // --- Recolección de Datos ---
     $id_evento = $_POST['id_evento'] ?? null;
@@ -53,8 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_tipo_entrada = $_POST['id_tipo_entrada'] ?? null;
     $numero_transaccion = trim($_POST['numero_transaccion'] ?? '');
     $banco = $_POST['banco'] ?? 'Otro';
-
-    // --- NUEVOS CAMPOS ---
     $tipo_asistente = $_POST['tipo_asistente'] ?? '';
     $carrera_curso = '';
     $nivel = '';
@@ -66,14 +69,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $carrera_curso = $_POST['carrera_curso_capacitadora'] ?? '';
         $nivel = $_POST['nivel_capacitadora'] ?? '';
     }
-    // Si es 'Externo', las variables quedan vacías, lo cual es correcto.
 
-    // --- Lógica para Eventos Gratuitos ---
+    // --- Lógica de Tipo de Entrada (Gratuito / Beca) ---
     $esGratuito = false;
+    $esEntradaBeca = false; 
     if ($id_tipo_entrada) {
         $tipoEntrada = $tipoEntradaDAO->getTipoEntradaPorId($id_tipo_entrada);
         if ($tipoEntrada && (float)$tipoEntrada['precio'] === 0.00) {
             $esGratuito = true;
+            $esEntradaBeca = true; 
         }
     }
 
@@ -93,25 +97,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return $resultado === $digitoVerificador;
     }
 
-    // --- Reglas de Validación del Servidor ---
-    if (empty($nombres) || !preg_match('/^[A-ZÁÉÍÓÚÑ\s]+$/iu', $nombres)) $errors[] = 'El campo Nombres es inválido (solo letras y espacios).';
-    if (empty($apellidos) || !preg_match('/^[A-ZÁÉÍÓÚÑ\s]+$/iu', $apellidos)) $errors[] = 'El campo Apellidos es inválido (solo letras y espacios).';
+    // --- BLOQUE CENTRAL DE VALIDACIONES ---
+    // Todas las comprobaciones se hacen aquí, antes de cualquier operación en la base de datos.
+    if (empty($nombres) || !preg_match('/^[A-ZÁÉÍÓÚÑ\s]+$/iu', $nombres)) $errors[] = 'El campo Nombres es inválido (solo letras mayúsculas y espacios).';
+    if (empty($apellidos) || !preg_match('/^[A-ZÁÉÍÓÚÑ\s]+$/iu', $apellidos)) $errors[] = 'El campo Apellidos es inválido (solo letras mayúsculas y espacios).';
     if (empty($cedula) || !validarCedula($cedula)) $errors[] = 'La cédula ingresada no es válida.';
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'El formato del correo es inválido.';
-    if (empty($telefono) || !preg_match('/^09\d{8}$/', $telefono)) $errors[] = 'El teléfono es inválido.';
-    if (in_array($tipo_asistente, ['Instituto', 'Capacitadora']) && empty($sede)) {
-        $errors[] = 'Debe seleccionar una sede.';
-    }
-    if (empty($tipo_asistente)) $errors[] = 'Debe especificar si pertenece al instituto, capacitadora o es externo.';
+    if (empty($telefono) || !preg_match('/^09\d{8}$/', $telefono)) $errors[] = 'El teléfono es inválido. Debe empezar con 09 y tener 10 dígitos.';
+    if (in_array($tipo_asistente, ['Instituto', 'Capacitadora']) && empty($sede)) $errors[] = 'Debe seleccionar una sede.';
     if (empty($id_tipo_entrada)) $errors[] = 'Debe seleccionar un tipo de entrada.';
     
-    // Validaciones condicionales para campos de pago
     if (!$esGratuito) {
         if (empty($numero_transaccion)) $errors[] = 'El número de transacción es obligatorio.';
-        if (!isset($_FILES['comprobante']) || $_FILES['comprobante']['error'] != 0) $errors[] = 'Es obligatorio subir el comprobante.';
+        if (!isset($_FILES['comprobante']) || $_FILES['comprobante']['error'] != 0) $errors[] = 'Es obligatorio subir el comprobante de pago.';
     }
 
-    // Si no hay errores de formato, procedemos a validar contra la BD
+    // ✅ CAMBIO #2: VALIDACIÓN DE BECA EN EL LUGAR CORRECTO
+    // Se valida la beca junto al resto de las reglas de negocio.
+    if ($esEntradaBeca) {
+        if (!$becadoDAO->isBecadoValido($cedula)) {
+            $errors[] = "La cédula ingresada no corresponde a un estudiante con beca activa. Contactese con secretaria para más información.";
+        }
+    }
+
+    // Si no hay errores de formato, validamos contra la Base de Datos
     if (empty($errors)) {
         if ($participanteDAO->cedulaYaRegistradaEnEvento($cedula, $id_evento)) {
             $errors[] = "La cédula '$cedula' ya está registrada en este evento.";
@@ -121,42 +130,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // --- Procesamiento ---
+    // --- Procesamiento (Solo si no hay errores) ---
     if (empty($errors)) {
         try {
-            $esEntradaBeca = false;
-            // Verificamos si la entrada seleccionada es para becados (asumimos que es la que cuesta $0)
-            if ($tipoEntrada && (float)$tipoEntrada['precio'] === 0.00) {
-                $esEntradaBeca = true;
-            }
-
-            // ¡NUEVA VALIDACIÓN DE BECA!
-            if ($esEntradaBeca) {
-                $becadoDAO = new BecadoDAO();
-                if (!$becadoDAO->isBecadoValido($cedula)) {
-                    // Si no es un becado válido, lanzamos una excepción con un mensaje claro.
-                    throw new Exception("La cédula ingresada no corresponde a un estudiante con beca activa. Contactese con secretaria para más información.");
-                }
-            }
-
             $ruta_para_bd = 'N/A';
-            if (!$esGratuito) { // Esta lógica se mantiene igual
+            if (!$esGratuito) {
                 $nombre_carpeta_banco = preg_replace("/[^a-zA-Z0-9]+/", "", $banco);
                 $directorio_subida = __DIR__ . '/../uploads/comprobantes/' . $nombre_carpeta_banco . '/';
-                if (!is_dir($directorio_subida)) mkdir($directorio_subida, 0777, true);
+                if (!is_dir($directorio_subida)) {
+                    mkdir($directorio_subida, 0777, true);
+                }
                 $nombre_archivo = uniqid() . '-' . basename($_FILES['comprobante']['name']);
                 $ruta_completa = $directorio_subida . $nombre_archivo;
                 if (move_uploaded_file($_FILES['comprobante']['tmp_name'], $ruta_completa)) {
                     $ruta_para_bd = 'uploads/comprobantes/' . $nombre_carpeta_banco . '/' . $nombre_archivo;
                 } else {
-                    throw new Exception("Hubo un error al guardar el comprobante.");
+                    throw new Exception("Hubo un error al guardar el comprobante de pago.");
                 }
             } else {
                 $numero_transaccion = $esEntradaBeca ? 'BECA-' . uniqid() : 'GRATUITO-' . uniqid();
                 $banco = 'N/A';
             }
 
-            // Llamada al método ACTUALIZADO del DAO con los nuevos campos
+            // Llamada al DAO para crear el participante
             $nuevoId = $participanteDAO->crearParticipante(
                 $nombres, $apellidos, $cedula, $email, $telefono, $sede, 
                 $tipo_asistente, $carrera_curso, $nivel,
@@ -164,9 +160,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
             
             if ($nuevoId) {
-                // ¡NUEVO! Si fue un registro de beca exitoso, incrementamos el contador
+                // ✅ CAMBIO #3: USO CORRECTO DEL OBJETO DAO EXISTENTE
+                // Si el registro fue de beca, se usa el objeto $becadoDAO ya creado.
                 if ($esEntradaBeca) {
-                    $becadoDAO = new BecadoDAO(); // Re-instanciamos por si acaso
                     $becadoDAO->incrementarAtenea($cedula);
                 }
 
@@ -176,13 +172,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'id_participante' => $nuevoId
                 ];
             } else {
-                throw new Exception("No se pudo obtener el ID del nuevo registro.");
+                throw new Exception("No se pudo obtener el ID del nuevo registro después de la inserción.");
             }
 
         } catch (Exception $e) {
             $response = ['status' => 'error', 'errors' => [$e->getMessage()]];
         }
     } else {
+        // Si hubo errores de validación, se devuelven todos juntos.
         $response = ['status' => 'error', 'errors' => $errors];
     }
 

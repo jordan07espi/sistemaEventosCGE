@@ -96,5 +96,32 @@ class BecadoDAO {
             throw new Exception("Error al procesar el archivo Excel: " . $e->getMessage());
         }
     }
+
+        /**
+     * Verifica si una cédula corresponde a un becado con estado 'Activo'.
+     * @param string $cedula La cédula a verificar.
+     * @return bool True si es un becado válido y activo, false en caso contrario.
+     */
+    public function isBecadoValido($cedula) {
+        $query = "SELECT COUNT(*) FROM becados WHERE cedula = :cedula AND estado = 'Activo'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->execute();
+        // Si fetchColumn() devuelve un número mayor que 0, significa que encontró al menos un becado activo.
+        return $stmt->fetchColumn() > 0;
+    }
+
+    // ✅ --- FUNCIÓN #2 QUE FALTABA ---
+    /**
+     * Incrementa en 1 el contador 'ateneas_cursadas' para un becado específico.
+     * @param string $cedula La cédula del becado.
+     * @return bool True si la actualización fue exitosa, false si no.
+     */
+    public function incrementarAtenea($cedula) {
+        $query = "UPDATE becados SET ateneas_cursadas = ateneas_cursadas + 1 WHERE cedula = :cedula";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':cedula', $cedula);
+        return $stmt->execute();
+    }
 }
 ?>
