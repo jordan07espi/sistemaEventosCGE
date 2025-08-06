@@ -9,8 +9,7 @@ class DashboardDAO {
     }
 
     /**
-     * Obtiene los datos globales para las tarjetas principales.
-     * Si se pasa un id_evento, calcula los datos solo para ese evento.
+     * ✅ CORREGIDO: Obtiene los datos para las tarjetas. Ahora filtra correctamente por evento.
      */
     public function getDatosGenerales($id_evento = null) {
         $response = [
@@ -20,72 +19,85 @@ class DashboardDAO {
             'total_ingresos' => 0.00
         ];
 
-        // Contar total de eventos (siempre es global)
+        // 1. Contar total de eventos (esto siempre es global)
         $stmt_eventos = $this->conn->prepare("SELECT COUNT(id) FROM eventos");
         $stmt_eventos->execute();
         $response['total_eventos'] = $stmt_eventos->fetchColumn();
 
-        // Construir queries con filtro opcional
-        $filtro_sql = ($id_evento) ? "WHERE p.id_evento = :id_evento" : "";
+        // 2. Construir la consulta base para participantes, asistentes e ingresos
+        $query_participantes_base = "
+            SELECT 
+                COUNT(p.id) as total_participantes,
+                COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 END) as total_asistentes,
+                SUM(CASE WHEN p.asistencia = 'Registrado' THEN te.precio ELSE 0 END) as total_ingresos
+            FROM participantes p
+            JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+        ";
         
-        $query_participantes = "SELECT 
-                                    COUNT(p.id) as total_participantes,
-                                    COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 ELSE NULL END) as total_asistentes,
-                                    SUM(te.precio) as total_ingresos
-                                FROM participantes p
-                                JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
-                                $filtro_sql";
-
-        $stmt_participantes = $this->conn->prepare($query_participantes);
+        // 3. Añadir el filtro si se proporciona un id_evento
         if ($id_evento) {
+            // Unimos la tabla calendarios para poder filtrar por el evento
+            $query_participantes_base .= " JOIN calendarios c ON te.id_calendario = c.id WHERE c.id_evento = :id_evento";
+            $stmt_participantes = $this->conn->prepare($query_participantes_base);
             $stmt_participantes->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        } else {
+            $stmt_participantes = $this->conn->prepare($query_participantes_base);
         }
+
         $stmt_participantes->execute();
         $datos = $stmt_participantes->fetch(PDO::FETCH_ASSOC);
 
         if ($datos) {
-            $response['total_participantes'] = (int) $datos['total_participantes'];
-            $response['total_asistentes'] = (int) $datos['total_asistentes'];
-            $response['total_ingresos'] = number_format((float) $datos['total_ingresos'], 2, '.', '');
+            $response['total_participantes'] = $datos['total_participantes'] ?? 0;
+            $response['total_asistentes'] = $datos['total_asistentes'] ?? 0;
+            $response['total_ingresos'] = $datos['total_ingresos'] ?? 0.00;
         }
-        
+
         return $response;
     }
 
     /**
-     * Obtiene los datos para el gráfico de barras.
-     * Si no se pasa id_evento, obtiene los datos de todos los eventos.
-     * Si se pasa id_evento, obtiene la distribución por carrera/curso de ese evento.
+     * ✅ CORREGIDO: Obtiene los datos para el gráfico principal. Ahora agrupa y filtra correctamente.
      */
     public function getDatosGraficoPrincipal($id_evento = null) {
+        $query = "";
         if ($id_evento) {
-            // Vista detallada: distribución por carrera/curso para un evento específico
-            $query = "SELECT 
-                        COALESCE(NULLIF(carrera, ''), NULLIF(curso, ''), 'No especificado') as grupo,
-                        COUNT(id) as registrados,
-                        COUNT(CASE WHEN asistencia = 'Registrado' THEN 1 ELSE NULL END) as asistentes
-                      FROM participantes
-                      WHERE id_evento = :id_evento
-                      GROUP BY grupo
-                      ORDER BY registrados DESC";
+            // Consulta para un evento específico: agrupa por tipo de entrada (tickets)
+            $query = "
+                SELECT 
+                    te.nombre as grupo,
+                    COUNT(p.id) as registrados,
+                    COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 END) as asistentes
+                FROM participantes p
+                JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+                JOIN calendarios c ON te.id_calendario = c.id
+                WHERE c.id_evento = :id_evento
+                GROUP BY te.id, te.nombre
+                ORDER BY registrados DESC
+            ";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
         } else {
-            // Vista general: comparación entre eventos
-            $query = "SELECT 
-                        ev.nombre as grupo,
-                        COUNT(p.id) as registrados,
-                        COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 ELSE NULL END) as asistentes
-                      FROM eventos ev
-                      LEFT JOIN participantes p ON ev.id = p.id_evento
-                      GROUP BY ev.id, ev.nombre
-                      ORDER BY registrados DESC";
+            // Consulta general: agrupa por evento
+            $query = "
+                SELECT 
+                    ev.nombre as grupo,
+                    COUNT(p.id) as registrados,
+                    COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 END) as asistentes
+                FROM eventos ev
+                LEFT JOIN calendarios c ON ev.id = c.id_evento
+                LEFT JOIN tipos_entrada te ON c.id = te.id_calendario
+                LEFT JOIN participantes p ON te.id = p.id_tipo_entrada
+                GROUP BY ev.id, ev.nombre
+                ORDER BY registrados DESC
+            ";
             $stmt = $this->conn->prepare($query);
         }
 
         $stmt->execute();
         $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        // Formatear datos para Chart.js
         $labels = array_column($resultados, 'grupo');
         $registrados = array_column($resultados, 'registrados');
         $asistentes = array_column($resultados, 'asistentes');
@@ -112,10 +124,10 @@ class DashboardDAO {
     }
 
     /**
-     * Obtiene una lista de todos los eventos para poblar el dropdown del dashboard.
+     * Obtiene una lista de todos los eventos para poblar el dropdown.
      */
     public function getListaEventos() {
-        $stmt = $this->conn->prepare("SELECT id, nombre FROM eventos ORDER BY nombre ASC");
+        $stmt = $this->conn->prepare("SELECT id, nombre FROM eventos WHERE activo = 1 ORDER BY fecha_inicio DESC");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

@@ -6,22 +6,23 @@ header('Content-Type: application/json');
 $dashboardDAO = new DashboardDAO();
 $response = ['status' => 'error', 'message' => 'Acción no válida'];
 
-// Determinar la acción a realizar
+// Determinar la acción y el id_evento
 $accion = $_GET['accion'] ?? 'get_datos_generales';
-$id_evento = isset($_GET['id_evento']) && !empty($_GET['id_evento']) ? (int)$_GET['id_evento'] : null;
+$id_evento = !empty($_GET['id_evento']) ? (int)$_GET['id_evento'] : null;
 
 try {
     switch ($accion) {
-        case 'get_datos_generales':
-            // Esta acción ahora devuelve el paquete completo de datos para la vista inicial
+        case 'get_datos_dashboard':
+            // ✅ ACCIÓN UNIFICADA: Devuelve todos los datos necesarios para el dashboard
+            // tanto para la vista general como para la filtrada.
             $response = [
                 'status' => 'success',
-                'datos_tarjetas' => $dashboardDAO->getDatosGenerales(),
-                'datos_grafico' => $dashboardDAO->getDatosGraficoPrincipal()
+                'datos_tarjetas' => $dashboardDAO->getDatosGenerales($id_evento),
+                'datos_grafico' => $dashboardDAO->getDatosGraficoPrincipal($id_evento)
             ];
             break;
 
-        case 'get_datos_evento':
+        case 'get_lista_eventos':
             // Esta acción devuelve el paquete de datos para un evento específico
             if (!$id_evento) {
                 // Si el ID del evento es nulo o vacío, devuelve los datos generales.
@@ -46,11 +47,14 @@ try {
                 'data' => $dashboardDAO->getListaEventos()
             ];
             break;
+        
+        default:
+             $response['message'] = 'La acción especificada no existe.';
+             break;
     }
 } catch (Exception $e) {
     $response['message'] = $e->getMessage();
 }
 
 echo json_encode($response);
-exit();
 ?>

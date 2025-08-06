@@ -699,8 +699,7 @@ $(document).ready(function() {
 
     // --- LÓGICA PARA EL GRÁFICO Y FILTROS DEL DASHBOARD ---
     if ($('#participantesPorEventoChart').length) {
-        const ctx = document.getElementById('participantesPorEventoChart').getContext('2d');
-        let dashboardChart = null; // Hacemos la variable del gráfico accesible globalmente en este scope
+        let myBarChart = null; // Hacemos la variable del gráfico accesible globalmente en este scope
 
         // Función para crear o actualizar el gráfico
         function renderizarGraficoDashboard(chartData) {
@@ -734,63 +733,102 @@ $(document).ready(function() {
             });
         }
         
-        // Función para actualizar las tarjetas de datos
-        function actualizarTarjetas(cardData) {
-            $('#total-eventos').text(cardData.total_eventos);
-            $('#total-participantes').text(cardData.total_participantes);
-            $('#total-asistentes').text(cardData.total_asistentes);
-            $('#total-ingresos').text('$' + parseFloat(cardData.total_ingresos).toFixed(2));
+        // --- FUNCIÓN PARA ACTUALIZAR TARJETAS ---
+        function actualizarTarjetas(datos) {
+            $('#total-eventos').text(datos.total_eventos);
+            $('#total-participantes').text(datos.total_participantes);
+            $('#total-asistentes').text(datos.total_asistentes);
+            // Formatear como moneda
+            $('#total-ingresos').text('$' + parseFloat(datos.total_ingresos).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         }
 
-        // Función principal para cargar todos los datos del dashboard
-        function cargarDatosDashboard(idEvento = null) {
-            const params = {
-                accion: 'get_datos_evento',
-                id_evento: idEvento
-            };
+        // --- FUNCIÓN PARA ACTUALIZAR EL GRÁFICO ---
+        function actualizarGrafico(datosGrafico) {
+            // Si ya existe un gráfico, lo destruimos antes de crear uno nuevo
+            if (myBarChart) {
+                myBarChart.destroy();
+            }
             
-            $.ajax({
-                url: '../../controller/DashboardControlador.php',
-                type: 'GET',
-                data: params,
-                dataType: 'json',
-                success: function(response) {
-                    if (response.status === 'success') {
-                        actualizarTarjetas(response.datos_tarjetas);
-                        renderizarGraficoDashboard(response.datos_grafico);
-
-                        // Actualizar el título del gráfico
-                        if (idEvento) {
-                             const nombreEvento = $('#evento-dashboard-select option:selected').text();
-                             $('#grafico-titulo').text(`Distribución por Carrera/Curso - ${nombreEvento}`);
-                        } else {
-                             $('#grafico-titulo').text('Distribución de Participantes por Evento');
+            const ctx = document.getElementById('participantesPorEventoChart').getContext('2d');
+            myBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: datosGrafico,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                             ticks: {
+                                // Asegurar que solo se muestren enteros en el eje Y
+                                stepSize: 1,
+                                callback: function(value) {
+                                    if (Math.floor(value) === value) {
+                                        return value;
+                                    }
+                                }
+                            }
                         }
                     }
-                },
-                error: function() {
-                     $('#participantesPorEventoChart').parent().html('<p class="text-center text-danger">No se pudieron cargar los datos del gráfico.</p>');
                 }
             });
         }
 
-        // Cargar el dropdown de eventos al iniciar la página
-        $.ajax({
-             url: '../../controller/DashboardControlador.php',
-             type: 'GET',
-             data: { accion: 'get_lista_eventos' },
-             dataType: 'json',
-             success: function(response) {
-                if (response.status === 'success') {
-                    const select = $('#evento-dashboard-select');
-                    response.data.forEach(evento => {
-                        select.append(`<option value="${evento.id}">${evento.nombre}</option>`);
-                    });
+        // --- FUNCIÓN PARA CARGAR TODOS LOS DATOS DEL DASHBOARD ---
+        function cargarDatosDashboard(eventoId = null) {
+            $.ajax({
+                url: '../../controller/DashboardControlador.php',
+                type: 'GET',
+                data: {
+                    accion: 'get_datos_dashboard', // ✅ ACCIÓN UNIFICADA
+                    id_evento: eventoId
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        actualizarTarjetas(response.datos_tarjetas);
+                        actualizarGrafico(response.datos_grafico);
+
+                        // Actualizar el título del gráfico
+                        const titulo = eventoId ? `Distribución del Evento Seleccionado` : 'Distribución General por Evento';
+                        $('#grafico-titulo').text(titulo);
+                    } else {
+                        console.error("Error al cargar datos del dashboard:", response.message);
+                    }
+                },
+                error: function() {
+                    console.error("Error de comunicación con el servidor.");
                 }
-             }
-        });
+            });
+        }
+
+        // --- FUNCIÓN PARA POBLAR EL DROPDOWN DE EVENTOS ---
+        function cargarEventosDashboard() {
+            $.ajax({
+                url: '../../controller/DashboardControlador.php',
+                type: 'GET',
+                data: { accion: 'get_lista_eventos' },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        const select = $('#evento-dashboard-select');
+                        select.empty().append('<option value="">-- Ver todos los eventos --</option>');
+                        response.data.forEach(evento => {
+                            select.append(`<option value="${evento.id}">${evento.nombre}</option>`);
+                        });
+                    }
+                }
+            });
+        }
         
+                // --- EVENT LISTENER PARA EL FILTRO ---
+        $('#evento-dashboard-select').on('change', function() {
+            const eventoId = $(this).val();
+            cargarDatosDashboard(eventoId);
+        });
+
         // Carga inicial de datos para todo el dashboard
+        cargarEventosDashboard();
         cargarDatosDashboard();
 
         // Manejador de eventos para el cambio en el dropdown
