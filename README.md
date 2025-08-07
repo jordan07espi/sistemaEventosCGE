@@ -1,6 +1,6 @@
 # 📅 Sistema de Gestión de Eventos
 
-![Vista de Usuario](view/admin/assets/img/VistaUsuario.jpeg)
+![Vista de Usuario](VistaUsuario.jpeg)
 
 Un panel de control web completo y dinámico para la gestión de eventos y usuarios. Este sistema permite a los administradores llevar un control total sobre los eventos programados, gestionar una base de datos de usuarios y visualizar estadísticas clave a través de un dashboard interactivo.
 
