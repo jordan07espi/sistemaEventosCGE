@@ -707,6 +707,10 @@ $(document).ready(function() {
             $('#total-eventos').text(datos.total_eventos);
             $('#total-participantes').text(datos.total_participantes);
             $('#total-asistentes').text(datos.total_asistentes);
+            
+            // LÍNEA AÑADIDA PARA CORREGIR EL ERROR
+            $('#total-faltantes').text(datos.total_faltantes); 
+
             // Formatear como moneda
             $('#total-ingresos').text('$' + parseFloat(datos.total_ingresos).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
         }

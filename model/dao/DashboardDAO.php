@@ -17,6 +17,7 @@ class DashboardDAO {
             'total_eventos' => 0,
             'total_participantes' => 0,
             'total_asistentes' => 0,
+            'total_faltantes' => 0, // <-- 1. AÑADIR ESTA LÍNEA
             'total_ingresos' => 0.00
         ];
 
@@ -30,6 +31,7 @@ class DashboardDAO {
             SELECT 
                 COUNT(p.id) as total_participantes,
                 COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 END) as total_asistentes,
+                COUNT(CASE WHEN p.asistencia = 'Pendiente' THEN 1 END) as total_faltantes, -- <-- 2. AÑADIR ESTA LÍNEA
                 SUM(CASE WHEN p.asistencia = 'Registrado' THEN te.precio ELSE 0 END) as total_ingresos
             FROM participantes p
             JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
@@ -37,12 +39,10 @@ class DashboardDAO {
         
         // 3. Si se filtra por un evento, se añade un JOIN y un WHERE
         if ($id_evento) {
-            // ✅ CORRECCIÓN: Se une con 'calendarios' para poder filtrar por 'id_evento'
             $query_participantes_base .= " JOIN calendarios c ON te.id_calendario = c.id WHERE c.id_evento = :id_evento";
             $stmt_participantes = $this->conn->prepare($query_participantes_base);
             $stmt_participantes->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
         } else {
-            // Si no hay filtro, se usa la consulta base
             $stmt_participantes = $this->conn->prepare($query_participantes_base);
         }
 
@@ -52,6 +52,7 @@ class DashboardDAO {
         if ($datos) {
             $response['total_participantes'] = $datos['total_participantes'] ?? 0;
             $response['total_asistentes'] = $datos['total_asistentes'] ?? 0;
+            $response['total_faltantes'] = $datos['total_faltantes'] ?? 0; // <-- 3. AÑADIR ESTA LÍNEA
             $response['total_ingresos'] = $datos['total_ingresos'] ?? 0.00;
         }
 
