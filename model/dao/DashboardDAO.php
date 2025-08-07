@@ -9,7 +9,8 @@ class DashboardDAO {
     }
 
     /**
-     * ✅ CORREGIDO: Obtiene los datos para las tarjetas. Ahora filtra correctamente por evento.
+     * Obtiene los datos de las tarjetas de resumen (totales).
+     * Funciona tanto para la vista general como para un evento específico.
      */
     public function getDatosGenerales($id_evento = null) {
         $response = [
@@ -19,12 +20,12 @@ class DashboardDAO {
             'total_ingresos' => 0.00
         ];
 
-        // 1. Contar total de eventos (esto siempre es global)
+        // 1. Contar total de eventos (siempre es el total global)
         $stmt_eventos = $this->conn->prepare("SELECT COUNT(id) FROM eventos");
         $stmt_eventos->execute();
         $response['total_eventos'] = $stmt_eventos->fetchColumn();
 
-        // 2. Construir la consulta base para participantes, asistentes e ingresos
+        // 2. Consulta base para participantes, asistentes e ingresos
         $query_participantes_base = "
             SELECT 
                 COUNT(p.id) as total_participantes,
@@ -34,13 +35,14 @@ class DashboardDAO {
             JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
         ";
         
-        // 3. Añadir el filtro si se proporciona un id_evento
+        // 3. Si se filtra por un evento, se añade un JOIN y un WHERE
         if ($id_evento) {
-            // Unimos la tabla calendarios para poder filtrar por el evento
+            // ✅ CORRECCIÓN: Se une con 'calendarios' para poder filtrar por 'id_evento'
             $query_participantes_base .= " JOIN calendarios c ON te.id_calendario = c.id WHERE c.id_evento = :id_evento";
             $stmt_participantes = $this->conn->prepare($query_participantes_base);
             $stmt_participantes->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
         } else {
+            // Si no hay filtro, se usa la consulta base
             $stmt_participantes = $this->conn->prepare($query_participantes_base);
         }
 
@@ -57,12 +59,13 @@ class DashboardDAO {
     }
 
     /**
-     * ✅ CORREGIDO: Obtiene los datos para el gráfico principal. Ahora agrupa y filtra correctamente.
+     * Obtiene los datos para el gráfico principal.
+     * La consulta cambia dependiendo si se filtra por un evento o no.
      */
     public function getDatosGraficoPrincipal($id_evento = null) {
         $query = "";
         if ($id_evento) {
-            // Consulta para un evento específico: agrupa por tipo de entrada (tickets)
+            // Consulta para un evento específico: Agrupa por tipo de entrada
             $query = "
                 SELECT 
                     te.nombre as grupo,
@@ -78,7 +81,8 @@ class DashboardDAO {
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
         } else {
-            // Consulta general: agrupa por evento
+            // Consulta general: Agrupa por evento
+            // ✅ CORRECCIÓN: Se usan los JOINs correctos para vincular eventos con participantes
             $query = "
                 SELECT 
                     ev.nombre as grupo,
@@ -97,7 +101,7 @@ class DashboardDAO {
         $stmt->execute();
         $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Formatear datos para Chart.js
+        // Formatear datos para que Chart.js los entienda
         $labels = array_column($resultados, 'grupo');
         $registrados = array_column($resultados, 'registrados');
         $asistentes = array_column($resultados, 'asistentes');
@@ -109,25 +113,23 @@ class DashboardDAO {
                     'label' => 'Registrados',
                     'data' => $registrados,
                     'backgroundColor' => 'rgba(54, 162, 235, 0.7)',
-                    'borderColor' => 'rgba(54, 162, 235, 1)',
-                    'borderWidth' => 1
                 ],
                 [
                     'label' => 'Asistentes',
                     'data' => $asistentes,
                     'backgroundColor' => 'rgba(75, 192, 192, 0.7)',
-                    'borderColor' => 'rgba(75, 192, 192, 1)',
-                    'borderWidth' => 1
                 ]
             ]
         ];
     }
 
     /**
-     * Obtiene una lista de todos los eventos para poblar el dropdown.
+     * Obtiene la lista de todos los eventos para el menú desplegable.
      */
     public function getListaEventos() {
-        $stmt = $this->conn->prepare("SELECT id, nombre FROM eventos WHERE activo = 1 ORDER BY fecha_inicio DESC");
+        // ✅ CORRECCIÓN: Se ordena por 'id' descendente porque la columna 'fecha_registro' no existe en la tabla 'eventos'.
+        // Esto mostrará los eventos creados más recientemente primero.
+        $stmt = $this->conn->prepare("SELECT id, nombre FROM eventos ORDER BY id DESC");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
