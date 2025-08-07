@@ -48,6 +48,36 @@ class ParticipanteDAO {
         return $stmt->fetchColumn() > 0;
     }
 
+    /**
+     * Obtiene las estadísticas de asistencia (total, registrados, faltantes) para un evento.
+     * @param int $id_evento El ID del evento.
+     * @return array Un array asociativo con las estadísticas.
+     */
+    public function getEstadisticasAsistenciaPorEvento($id_evento) {
+        $sql = "
+            SELECT 
+                COUNT(p.id) as total_inscritos,
+                COUNT(CASE WHEN p.asistencia = 'Registrado' THEN 1 END) as total_registrados,
+                COUNT(CASE WHEN p.asistencia = 'Pendiente' THEN 1 END) as total_faltantes
+            FROM participantes p
+            INNER JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+            INNER JOIN calendarios c ON te.id_calendario = c.id
+            WHERE c.id_evento = :id_evento
+        ";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        $stmt->execute();
+
+        // Usamos fetch para obtener la única fila de resultados y nos aseguramos de que no sea null
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $resultado ? $resultado : [
+            'total_inscritos' => 0, 
+            'total_registrados' => 0, 
+            'total_faltantes' => 0
+        ];
+    }
+
 
     /**
      * Crea un nuevo registro de participante y descuenta un cupo, todo dentro de una transacción.

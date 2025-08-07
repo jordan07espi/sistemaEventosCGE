@@ -15,10 +15,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         $participantes = $participanteDAO->getParticipantesParaCheckin($id_evento, $busqueda, $pagina, $limite);
         $total = $participanteDAO->contarParticipantesParaCheckin($id_evento, $busqueda);
+        // Obtenemos las nuevas estadísticas llamando a la función que creamos
+        $estadisticas = $participanteDAO->getEstadisticasAsistenciaPorEvento($id_evento);
         
         $response = [
             'status' => 'success', 
             'data' => $participantes,
+            'estadisticas' => $estadisticas,
             'paginacion' => [
                 'total' => $total,
                 'pagina' => $pagina,

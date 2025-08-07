@@ -46,6 +46,22 @@ include 'partials/header.php';
         </div>
     </div>
 
+    <div id="info-asistencia-container" class="alert alert-info mb-4" style="display: none;">
+        <h5 class="alert-heading">Resumen del Evento</h5>
+        <hr>
+        <p class="mb-0">
+            <i class="fas fa-users"></i>
+            <strong>Total de Inscritos:</strong>
+            <span id="total-inscritos" class="fw-bold">0</span> |
+            <i class="fas fa-user-check text-success"></i>
+            <strong>Asistentes Registrados:</strong>
+            <span id="total-registrados" class="fw-bold text-success">0</span> |
+            <i class="fas fa-user-clock text-danger"></i>
+            <strong>Faltantes por Registrar:</strong>
+            <span id="total-faltantes" class="fw-bold text-danger">0</span>
+        </p>
+    </div>
+
     <div id="scanner-container" class="mb-4" style="display: none;">
         <div class="row">
             <div class="col-md-8">

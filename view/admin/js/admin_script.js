@@ -612,23 +612,38 @@ $(document).ready(function() {
         function cargarAsistencia(pagina = 1) {
             if (!idEventoSeleccionado) return;
             participantesContainer.show();
+            $('#info-asistencia-container').show(); 
             $('#tabla-asistencia-body').html('<tr><td colspan="4" class="text-center">Cargando...</td></tr>');
 
             $.get('../../controller/CheckinControlador.php', { id_evento: idEventoSeleccionado, busqueda: busquedaAsistencia, pagina: pagina }, function(response) {
                 if (response.status === 'success') {
                     renderizarTablaAsistencia(response.data);
                     renderizarPaginacionAsistencia(response.paginacion);
+                    if (response.estadisticas) {
+                        $('#total-inscritos').text(response.estadisticas.total_inscritos);
+                        $('#total-registrados').text(response.estadisticas.total_registrados);
+                        $('#total-faltantes').text(response.estadisticas.total_faltantes);
+                    }
                 }
             }, 'json');
         }
 
         $('#evento-checkin-select').on('change', function() {
             idEventoSeleccionado = $(this).val();
-            searchInput.prop('disabled', false);
-            startBtn.prop('disabled', false);
-            busquedaAsistencia = '';
-            searchInput.val('');
-            cargarAsistencia();
+
+            if (idEventoSeleccionado) {
+                searchInput.prop('disabled', false);
+                startBtn.prop('disabled', false);
+                busquedaAsistencia = '';
+                searchInput.val('');
+                cargarAsistencia();
+            } else {
+                // --- AÑADIR ESTE ELSE PARA OCULTAR TODO SI NO HAY EVENTO ---
+                searchInput.prop('disabled', true);
+                startBtn.prop('disabled', true);
+                participantesContainer.hide();
+                $('#info-asistencia-container').hide();
+            }
         });
 
         searchInput.on('keyup', function() {
