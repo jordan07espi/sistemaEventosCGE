@@ -1,3 +1,19 @@
+function escapeHTML(str) {
+    if (str === null || str === undefined) {
+        return '';
+    }
+    return str.toString().replace(/[&<>"']/g, function(match) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[match];
+    });
+}
+
+
 $(document).ready(function() {
 
     // --- LÓGICA PARA EL CONTADOR REGRESIVO (FLIPDOWN) ---
@@ -145,7 +161,7 @@ $(document).ready(function() {
             success: function(response) {
                 const alertContainer = $('#alert-container');
                 if (response.status === 'success') {
-                    alertContainer.html(`<div class="alert alert-success">${response.message} Se descargará tu boleto en unos segundos...</div>`);
+                    alertContainer.html(`<div class="alert alert-success">${escapeHTML(response.message)} Se descargará tu boleto en unos segundos...</div>`);
                     form[0].reset();
                     $('#campo-banco, #campo-transaccion, #campo-comprobante').hide();
                     
@@ -158,7 +174,7 @@ $(document).ready(function() {
 
                 } else {
                     let errorHtml = '<div class="alert alert-danger"><ul>';
-                    response.errors.forEach(error => { errorHtml += `<li>${error}</li>`; });
+                    response.errors.forEach(error => { errorHtml += `<li>${escapeHTML(error)}</li>`; });
                     errorHtml += '</ul></div>';
                     alertContainer.html(errorHtml);
                 }

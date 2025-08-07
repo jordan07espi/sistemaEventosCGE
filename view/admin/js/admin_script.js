@@ -1,6 +1,24 @@
 // =============================================================
 // FUNCIONES GLOBALES DE RENDERIZADO
 // =============================================================
+
+function escapeHTML(str) {
+    if (str === null || str === undefined) {
+        return '';
+    }
+    return str.toString().replace(/[&<>"']/g, function(match) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[match];
+    });
+}
+
+
+
 function renderizarTablaCategorias(categorias) {
     const tablaBody = $('#tabla-categorias-body');
     if (!tablaBody.length) return;
@@ -13,7 +31,7 @@ function renderizarTablaCategorias(categorias) {
         const estadoBadge = cat.activa == 1 ? '<span class="badge bg-success">Activa</span>' : '<span class="badge bg-danger">Inactiva</span>';
         const botonEstadoTexto = cat.activa == 1 ? 'Desactivar' : 'Activar';
         const botonEstadoClase = cat.activa == 1 ? 'btn-danger' : 'btn-success';
-        const fila = `<tr><td>${cat.nombre}</td><td>${estadoBadge}</td><td><a href="form_categoria.php?id=${cat.id}" class="btn btn-warning btn-sm">Editar</a> <button class="btn ${botonEstadoClase} btn-sm btn-estado" data-id="${cat.id}" data-estado="${cat.activa}">${botonEstadoTexto}</button></td></tr>`;
+        const fila = `<tr><td>${escapeHTML(cat.nombre)}</td><td>${estadoBadge}</td><td><a href="form_categoria.php?id=${cat.id}" class="btn btn-warning btn-sm">Editar</a> <button class="btn ${botonEstadoClase} btn-sm btn-estado" data-id="${cat.id}" data-estado="${cat.activa}">${botonEstadoTexto}</button></td></tr>`;
         tablaBody.append(fila);
     });
 }
@@ -27,7 +45,16 @@ function renderizarTablaLugares(lugares) {
         return;
     }
     lugares.forEach(lugar => {
-        const fila = `<tr><td>${lugar.nombre_establecimiento || ''}</td><td>${lugar.direccion || ''}</td><td>${lugar.ciudad || ''}</td><td>${lugar.capacidad || ''}</td><td><a href="form_lugar.php?id=${lugar.id}" class="btn btn-warning btn-sm">Editar</a> <button class="btn btn-danger btn-sm btn-eliminar-lugar" data-id="${lugar.id}">Eliminar</button></td></tr>`;
+        const fila = `<tr>
+            <td>${escapeHTML(lugar.nombre_establecimiento || '')}</td>
+            <td>${escapeHTML(lugar.direccion || '')}</td>
+            <td>${escapeHTML(lugar.ciudad || '')}</td>
+            <td>${escapeHTML(lugar.capacidad || '')}</td>
+            <td>
+            <a href="form_lugar.php?id=${lugar.id}" class="btn btn-warning btn-sm">Editar</a>
+            <button class="btn btn-danger btn-sm btn-eliminar-lugar" data-id="${lugar.id}">Eliminar</button>
+            </td>
+        </tr>`;
         tablaBody.append(fila);
     });
 }
@@ -62,14 +89,14 @@ function renderizarTablaEventos(eventos) {
 
         const fila = `
             <tr>
-                <td>${evento.nombre}</td>
-                <td><span class="badge bg-info text-dark">${evento.nombre_categoria}</span></td>
-                <td>${estadoBadge}</td>
-                <td>
-                    <a href="detalle_evento.php?id=${evento.id}" class="btn btn-info btn-sm">Ver</a>
-                    <a href="form_evento.php?id=${evento.id}" class="btn btn-warning btn-sm">Editar</a>
-                    ${accionesAdicionales}
-                </td>
+            <td>${escapeHTML(evento.nombre)}</td>
+            <td><span class="badge bg-info text-dark">${escapeHTML(evento.nombre_categoria)}</span></td>
+            <td>${estadoBadge}</td>
+            <td>
+                <a href="detalle_evento.php?id=${evento.id}" class="btn btn-info btn-sm">Ver</a>
+                <a href="form_evento.php?id=${evento.id}" class="btn btn-warning btn-sm">Editar</a>
+                ${accionesAdicionales}
+            </td>
             </tr>
         `;
         tablaBody.append(fila);
@@ -99,11 +126,11 @@ function renderizarTablaParticipantes(participantes) {
 
         const fila = `
             <tr>
-                <td>${p.nombres} ${p.apellidos}</td>
-                <td>${p.cedula}</td>
-                <td>${p.email}</td>
-                <td><span class="badge bg-success">${p.nombre_entrada}</span></td>
-                <td>${enlaceComprobante}</td>
+            <td>${escapeHTML(p.nombres)} ${escapeHTML(p.apellidos)}</td>
+            <td>${escapeHTML(p.cedula)}</td>
+            <td>${escapeHTML(p.email)}</td>
+            <td><span class="badge bg-success">${escapeHTML(p.nombre_entrada)}</span></td>
+            <td>${enlaceComprobante}</td>
             </tr>
         `;
         tablaBody.append(fila);
@@ -155,14 +182,14 @@ function renderizarTablaUsuarios(usuarios) {
     usuarios.forEach(user => {
         const fila = `
             <tr>
-                <td>${user.nombres} ${user.apellidos}</td>
-                <td>${user.cedula}</td>
-                <td><span class="badge bg-secondary">${user.nombre_rol}</span></td>
-                <td>
-                    <a href="form_usuario.php?id=${user.id}" class="btn btn-warning btn-sm">Editar</a>
-                    <button class="btn btn-info btn-sm btn-reset-pass" data-id="${user.id}" data-nombre="${user.nombres} ${user.apellidos}" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">Reset Pass</button>
-                    <button class="btn btn-danger btn-sm btn-eliminar-usuario" data-id="${user.id}">Eliminar</button>
-                </td>
+            <td>${escapeHTML(user.nombres)} ${escapeHTML(user.apellidos)}</td>
+            <td>${escapeHTML(user.cedula)}</td>
+            <td><span class="badge bg-secondary">${escapeHTML(user.nombre_rol)}</span></td>
+            <td>
+                <a href="form_usuario.php?id=${user.id}" class="btn btn-warning btn-sm">Editar</a>
+                <button class="btn btn-info btn-sm btn-reset-pass" data-id="${user.id}" data-nombre="${escapeHTML(user.nombres)} ${escapeHTML(user.apellidos)}" data-bs-toggle="modal" data-bs-target="#resetPasswordModal">Reset Pass</button>
+                <button class="btn btn-danger btn-sm btn-eliminar-usuario" data-id="${user.id}">Eliminar</button>
+            </td>
             </tr>`;
         tablaBody.append(fila);
     });
@@ -697,8 +724,8 @@ $(document).ready(function() {
 
             $.post('../../controller/CheckinControlador.php', postData, function(response) {
                 const alertClass = response.status === 'success' ? 'alert-success' : 'alert-danger';
-                let content = `<h5>${response.message}</h5>`;
-                if (response.participante) content += `<p class="mb-0">${response.participante}</p>`;
+                let content = `<h5>${escapeHTML(response.message)}</h5>`;
+                if (response.participante) content += `<p class="mb-0">${escapeHTML(response.participante)}</p>`;
                 resultContainer.html(`<div class="alert ${alertClass}">${content}</div>`);
 
                 if (response.status === 'success') {
