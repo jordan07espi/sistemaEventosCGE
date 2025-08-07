@@ -76,5 +76,34 @@ class UsuarioDAO {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+
+    public function registrarIntentoFallido($cedula, $ip_address) {
+    $sql = "INSERT INTO intentos_login_fallidos (cedula, ip_address) VALUES (:cedula, :ip_address)";
+    $stmt = $this->conn->prepare($sql);
+    $stmt->bindParam(':cedula', $cedula);
+    $stmt->bindParam(':ip_address', $ip_address);
+    $stmt->execute();
+    }
+
+    public function contarIntentosFallidos($cedula, $ip_address) {
+        // Contamos intentos de los últimos 15 minutos desde la misma IP o para la misma cédula
+        $sql = "SELECT COUNT(*) as total FROM intentos_login_fallidos 
+                WHERE (cedula = :cedula OR ip_address = :ip_address) 
+                AND fecha_intento >= (NOW() - INTERVAL 15 MINUTE)";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->bindParam(':ip_address', $ip_address);
+        $stmt->execute();
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $resultado['total'];
+    }
+
+    public function limpiarIntentosFallidos($cedula) {
+        $sql = "DELETE FROM intentos_login_fallidos WHERE cedula = :cedula";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->execute();
+    }
 }
 ?>
