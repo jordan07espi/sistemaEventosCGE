@@ -49,7 +49,10 @@ try {
             $response = [
                 'status' => 'success',
                 'datos_tarjetas' => $dashboardDAO->getDatosGenerales($id_evento),
-                'datos_grafico' => $dashboardDAO->getDatosGraficoPrincipal($id_evento)
+                'datos_grafico' => $dashboardDAO->getDatosGraficoPrincipal($id_evento),
+                'datos_tipo_asistente' => $dashboardDAO->getDatosPorTipoAsistente($id_evento),
+                'datos_carrera' => $dashboardDAO->getDatosPorCarrera($id_evento),
+                'datos_nivel' => $dashboardDAO->getDatosPorNivel($id_evento)
             ];
             break;
 

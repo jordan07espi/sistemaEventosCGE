@@ -134,5 +134,82 @@ class DashboardDAO {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+
+        /**
+     * Prepara una consulta base para los desgloses con los JOINs necesarios.
+     */
+    private function prepararConsultaDesglose($campo, $id_evento) {
+        // Seleccionamos el campo a agrupar (tipo_asistente, carrera_curso, etc.)
+        // y contamos las ocurrencias.
+        $sql = "
+            SELECT 
+                {$campo} as etiqueta, 
+                COUNT(p.id) as total
+            FROM participantes p
+            INNER JOIN tipos_entrada te ON p.id_tipo_entrada = te.id
+            INNER JOIN calendarios c ON te.id_calendario = c.id
+            WHERE p.asistencia = 'Registrado' AND p.{$campo} IS NOT NULL AND p.{$campo} != ''
+        ";
+
+        // Si se especifica un evento, filtramos por él.
+        if ($id_evento) {
+            $sql .= " AND c.id_evento = :id_evento ";
+        }
+
+        // Agrupamos por el campo seleccionado y ordenamos de mayor a menor.
+        $sql .= " GROUP BY etiqueta ORDER BY total DESC LIMIT 10";
+
+        $stmt = $this->conn->prepare($sql);
+
+        if ($id_evento) {
+            $stmt->bindParam(':id_evento', $id_evento, PDO::PARAM_INT);
+        }
+
+        return $stmt;
+    }
+    
+    /**
+     * Formatea los resultados de la consulta para Chart.js.
+     */
+    private function formatearDatosParaGrafico($stmt) {
+        $stmt->execute();
+        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'labels' => array_column($resultados, 'etiqueta'),
+            'datasets' => [
+                [
+                    'label' => 'Asistentes',
+                    'data' => array_column($resultados, 'total'),
+                    'borderWidth' => 1
+                ]
+            ]
+        ];
+    }
+
+    /**
+     * Obtiene datos de asistentes agrupados por Tipo de Asistente.
+     */
+    public function getDatosPorTipoAsistente($id_evento = null) {
+        $stmt = $this->prepararConsultaDesglose('tipo_asistente', $id_evento);
+        return $this->formatearDatosParaGrafico($stmt);
+    }
+
+    /**
+     * Obtiene datos de asistentes agrupados por Carrera o Curso.
+     */
+    public function getDatosPorCarrera($id_evento = null) {
+        $stmt = $this->prepararConsultaDesglose('carrera_curso', $id_evento);
+        return $this->formatearDatosParaGrafico($stmt);
+    }
+
+    /**
+     * Obtiene datos de asistentes agrupados por Nivel.
+     */
+    public function getDatosPorNivel($id_evento = null) {
+        $stmt = $this->prepararConsultaDesglose('nivel', $id_evento);
+        return $this->formatearDatosParaGrafico($stmt);
+    }
 }
 ?>

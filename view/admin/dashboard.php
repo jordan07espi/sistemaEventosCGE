@@ -59,13 +59,6 @@ $datos_iniciales = $dashboardDAO->getDatosGenerales();
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    </div>
-            </div>
-        </div>
-
-        <div class="col-xl-3 col-md-6 mb-4">
             <div class="card border-left-danger shadow h-100 py-2">
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
@@ -78,12 +71,6 @@ $datos_iniciales = $dashboardDAO->getDatosGenerales();
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card border-left-warning shadow h-100 py-2">
-                 <div class="card-body">
-                    </div>
             </div>
         </div>
 
@@ -115,6 +102,50 @@ $datos_iniciales = $dashboardDAO->getDatosGenerales();
                 </div>
             </div>
         </div>
+    </div>
+
+    </div>
+
+    <div class="row">
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Asistentes por Tipo</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie" style="height: 300px; position: relative;">
+                        <canvas id="tipoAsistenteChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top 10 Carreras/Cursos con más Asistentes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar" style="height: 300px; position: relative;">
+                        <canvas id="carreraChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top 10 Niveles con más Asistentes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar" style="height: 300px; position: relative;">
+                        <canvas id="nivelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     </div>
 
 </div>

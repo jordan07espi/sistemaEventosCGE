@@ -700,7 +700,10 @@ $(document).ready(function() {
     // --- LÓGICA PARA EL GRÁFICO Y FILTROS DEL DASHBOARD ---
     if ($('#participantesPorEventoChart').length) {
         // Variable para mantener la instancia del gráfico y poder destruirla
-        let myBarChart = null; 
+        let myBarChart = null;
+        let tipoChart = null;
+        let carreraChart = null;
+        let nivelChart = null; 
 
         // --- FUNCIÓN PARA ACTUALIZAR LAS TARJETAS DE DATOS ---
         function actualizarTarjetas(datos) {
@@ -753,6 +756,77 @@ $(document).ready(function() {
             });
         }
 
+        // --- Función para generar colores dinámicos ---
+        function generarColoresDinamicos(cantidad) {
+            const coloresBase = [
+                'rgba(54, 162, 235, 0.7)', 'rgba(75, 192, 192, 0.7)', 'rgba(255, 206, 86, 0.7)',
+                'rgba(255, 99, 132, 0.7)', 'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
+                'rgba(199, 199, 199, 0.7)', 'rgba(83, 102, 255, 0.7)', 'rgba(10, 207, 151, 0.7)',
+                'rgba(255, 10, 10, 0.7)'
+            ];
+            let colores = [];
+            for (let i = 0; i < cantidad; i++) {
+                colores.push(coloresBase[i % coloresBase.length]);
+            }
+            return colores;
+        }
+
+
+        // --- Gráfico para TIPO DE ASISTENTE (Doughnut) ---
+        function actualizarGraficoTipo(datos) {
+            if (tipoChart) tipoChart.destroy();
+            const ctx = document.getElementById('tipoAsistenteChart').getContext('2d');
+            datos.datasets[0].backgroundColor = generarColoresDinamicos(datos.labels.length);
+            
+            tipoChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: datos,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+        }
+
+        // --- Gráfico para CARRERA/CURSO (Barra Horizontal) ---
+        function actualizarGraficoCarrera(datos) {
+            if (carreraChart) carreraChart.destroy();
+            const ctx = document.getElementById('carreraChart').getContext('2d');
+            datos.datasets[0].backgroundColor = generarColoresDinamicos(datos.labels.length);
+
+            carreraChart = new Chart(ctx, {
+                type: 'bar',
+                data: datos,
+                options: {
+                    indexAxis: 'y', // <-- Esto lo hace horizontal
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // --- Gráfico para NIVEL (Barra Vertical) ---
+        function actualizarGraficoNivel(datos) {
+            if (nivelChart) nivelChart.destroy();
+            const ctx = document.getElementById('nivelChart').getContext('2d');
+            datos.datasets[0].backgroundColor = generarColoresDinamicos(datos.labels.length);
+
+            nivelChart = new Chart(ctx, {
+                type: 'bar',
+                data: datos,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+
         // --- FUNCIÓN PARA CARGAR TODOS LOS DATOS DEL DASHBOARD (TARJETAS Y GRÁFICO) ---
         function cargarDatosDashboard(eventoId = null) {
             $.ajax({
@@ -767,6 +841,9 @@ $(document).ready(function() {
                     if (response.status === 'success') {
                         actualizarTarjetas(response.datos_tarjetas);
                         actualizarGrafico(response.datos_grafico);
+                        actualizarGraficoTipo(response.datos_tipo_asistente);
+                        actualizarGraficoCarrera(response.datos_carrera);
+                        actualizarGraficoNivel(response.datos_nivel);
 
                         // Actualizar el título del gráfico dinámicamente
                         const titulo = eventoId ? `Distribución del Evento Seleccionado` : 'Distribución General por Evento';
