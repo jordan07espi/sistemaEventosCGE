@@ -1,6 +1,6 @@
 # 📅 Sistema de Gestión de Eventos
 
-![Banner del Proyecto](https://i.imgur.com/gKj3aZz.png)
+![Vista de Usuario](view/admin/assets/img/VistaUsuario.jpeg)
 
 Un panel de control web completo y dinámico para la gestión de eventos y usuarios. Este sistema permite a los administradores llevar un control total sobre los eventos programados, gestionar una base de datos de usuarios y visualizar estadísticas clave a través de un dashboard interactivo.
 
@@ -118,7 +118,7 @@ La estructura del proyecto está diseñada para ser intuitiva y escalable, separ
 │   ├── home.php        # Página principal del dashboard
 │   └── usuarios.php    # Vista para la gestión de usuarios
 │
-├── controller/
+├── 📂 controller/
 │   ├── eventos.php     # Controlador para las acciones de eventos (AJAX)
 │   └── usuarios.php    # Controlador para las acciones de usuarios
 │
@@ -137,7 +137,7 @@ Este proyecto se distribuye bajo la Licencia MIT. Consulta el archivo `LICENSE` 
 
 ## 👨‍💻 Autor
 
-Desarrollado con pasión y café.
+Desarrollado por Jordan Espinosa  con pasión y café.
 
 <p align="center">
   <em>Adaptado y mejorado para la gestión moderna de eventos.</em>
