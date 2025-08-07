@@ -39,7 +39,7 @@ include 'partials/header.php';
             </div>
 
             <button type="submit" class="btn btn-primary"><?php echo $modoEdicion ? 'Actualizar' : 'Guardar'; ?></button>
-            <a href="index.php" class="btn btn-secondary">Cancelar</a>
+            <a href="categorias.php" class="btn btn-secondary">Cancelar</a>
         </form>
     </div>
 </div>
